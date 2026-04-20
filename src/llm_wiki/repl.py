@@ -10,5 +10,7 @@ def parse_command(line: str) -> ParsedCommand:
 
 class WikiRepl:
     def run(self) -> None:
-        return None
-
+        while True:
+            command = parse_command(input("> "))
+            if command.name in {"exit", "quit"}:
+                return
