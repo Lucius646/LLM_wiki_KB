@@ -23,3 +23,18 @@ class WorkspaceStatus:
     raw_file_count: int
     wiki_page_count: int
     initialized: bool
+
+
+@dataclass
+class ProviderConfig:
+    protocol: str
+    model: str
+    api_key: str
+    base_url: str = ""
+
+
+@dataclass
+class ConfigLoadResult:
+    provider: ProviderConfig | None
+    errors: list[str]
+    path: Path

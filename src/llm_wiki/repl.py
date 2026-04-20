@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from llm_wiki.config import load_config
 from llm_wiki.commands.init import run_init_command
 from llm_wiki.models import ParsedCommand, WorkspaceStatus
 from llm_wiki.workspace import detect_workspace
@@ -14,6 +15,7 @@ def parse_command(line: str) -> ParsedCommand:
 
 class WikiRepl:
     def run(self) -> None:
+        self._print_config_header()
         while True:
             command = parse_command(input("> "))
             if command.name in {"exit", "quit"}:
@@ -26,6 +28,17 @@ class WikiRepl:
                 status = detect_workspace(Path.cwd())
                 self._print_status(status)
                 continue
+
+    def _print_config_header(self) -> None:
+        config = load_config()
+        if config.provider and not config.errors:
+            print(f"Config: ready | model: {config.provider.model}")
+            return
+        if config.provider:
+            model = config.provider.model or "none"
+            print(f"Config: invalid | model: {model}")
+            return
+        print("Config: unavailable | model: none")
 
     def _print_status(self, status: WorkspaceStatus) -> None:
         print(f"Workspace initialized: {'yes' if status.initialized else 'no'}")
