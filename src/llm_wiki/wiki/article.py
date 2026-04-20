@@ -3,26 +3,9 @@ from pathlib import Path
 from llm_wiki.models import ArticleDocument
 
 
-def save_article(path: Path, document: ArticleDocument) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    body = document.body.strip("\n")
-    content = "\n".join(
-        [
-            f"# {document.title}",
-            "",
-            f"> Sources: {document.sources_line}",
-            f"> Raw: {document.raw_line}",
-            "",
-            body,
-            "",
-        ]
-    )
-    path.write_text(content, encoding="utf-8")
-
-
-def load_article(path: Path) -> ArticleDocument:
-    lines = path.read_text(encoding="utf-8").splitlines()
-    title = lines[0].removeprefix("# ").strip()
+def parse_article_document(text: str) -> ArticleDocument:
+    lines = text.splitlines()
+    title = lines[0].removeprefix("# ").strip() if lines else ""
     sources_line = ""
     raw_line = ""
     body_start = 0
@@ -45,3 +28,24 @@ def load_article(path: Path) -> ArticleDocument:
         raw_line=raw_line,
         body=body,
     )
+
+
+def save_article(path: Path, document: ArticleDocument) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    body = document.body.strip("\n")
+    content = "\n".join(
+        [
+            f"# {document.title}",
+            "",
+            f"> Sources: {document.sources_line}",
+            f"> Raw: {document.raw_line}",
+            "",
+            body,
+            "",
+        ]
+    )
+    path.write_text(content, encoding="utf-8")
+
+
+def load_article(path: Path) -> ArticleDocument:
+    return parse_article_document(path.read_text(encoding="utf-8"))

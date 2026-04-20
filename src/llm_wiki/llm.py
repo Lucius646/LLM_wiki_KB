@@ -2,11 +2,17 @@ from dataclasses import dataclass
 from typing import Protocol
 
 from llm_wiki.config import normalize_base_url
-from llm_wiki.models import ProviderConfig
+from llm_wiki.models import IndexEntry, ProviderConfig
 
 
 class LlmClient(Protocol):
     def complete(self, prompt: str) -> str:
+        raise NotImplementedError
+
+    def infer_article(self, raw_text: str, candidates: list[IndexEntry]) -> dict[str, object]:
+        raise NotImplementedError
+
+    def compile_article(self, **kwargs: object) -> str:
         raise NotImplementedError
 
 
@@ -17,6 +23,12 @@ class OpenAICompatibleClient:
     base_url: str | None = None
 
     def complete(self, prompt: str) -> str:
+        raise NotImplementedError
+
+    def infer_article(self, raw_text: str, candidates: list[IndexEntry]) -> dict[str, object]:
+        raise NotImplementedError
+
+    def compile_article(self, **kwargs: object) -> str:
         raise NotImplementedError
 
 

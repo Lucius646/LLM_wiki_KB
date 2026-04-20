@@ -55,3 +55,10 @@ class IndexEntry:
     path: str
     summary: str
     updated: str
+
+
+@dataclass
+class IngestResult:
+    ok: bool
+    message: str
+    article_path: str = ""
