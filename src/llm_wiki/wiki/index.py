@@ -79,3 +79,7 @@ def upsert_index_entry(
             )
         lines.append("")
     index_path.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
+
+
+def list_indexed_article_paths(index_path: Path) -> set[str]:
+    return {entry.path for entry in read_index_entries(index_path)}

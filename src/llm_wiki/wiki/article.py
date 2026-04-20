@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 
 from llm_wiki.models import ArticleDocument
 
@@ -49,3 +50,24 @@ def save_article(path: Path, document: ArticleDocument) -> None:
 
 def load_article(path: Path) -> ArticleDocument:
     return parse_article_document(path.read_text(encoding="utf-8"))
+
+
+MARKDOWN_LINK_PATTERN = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
+
+
+def extract_wiki_links(path: Path, document: ArticleDocument) -> list[str]:
+    links: list[str] = []
+    for source in _extract_markdown_links(document.sources_line):
+        if not source.startswith("../../raw/"):
+            links.append(str((path.parent / source).resolve()))
+    for body_link in _extract_markdown_links(document.body):
+        links.append(str((path.parent / body_link).resolve()))
+    return links
+
+
+def extract_raw_links(path: Path, document: ArticleDocument) -> list[str]:
+    return [str((path.parent / raw_link).resolve()) for raw_link in _extract_markdown_links(document.raw_line)]
+
+
+def _extract_markdown_links(text: str) -> list[str]:
+    return [match.group(2) for match in MARKDOWN_LINK_PATTERN.finditer(text)]

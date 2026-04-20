@@ -3,6 +3,7 @@ from pathlib import Path
 from llm_wiki.config import load_config
 from llm_wiki.commands.ingest import ingest_raw_file
 from llm_wiki.commands.init import run_init_command
+from llm_wiki.commands.lint import lint_workspace
 from llm_wiki.commands.query import answer_query
 from llm_wiki.llm import build_openai_compatible_client
 from llm_wiki.models import ParsedCommand, WorkspaceStatus
@@ -36,6 +37,9 @@ class WikiRepl:
                 continue
             if command.name == "query":
                 self._run_query(command.args)
+                continue
+            if command.name == "lint":
+                self._run_lint()
                 continue
 
     def _print_config_header(self) -> None:
@@ -110,3 +114,12 @@ class WikiRepl:
     def _confirm_new_article(self, article_title: str) -> bool:
         answer = input(f"Create new article '{article_title}'? [y/N]: ").strip().lower()
         return answer in {"y", "yes"}
+
+    def _run_lint(self) -> None:
+        result = lint_workspace(Path.cwd())
+        if result.ok:
+            print("Lint passed: 0 issues found")
+            return
+        print(f"Lint found {len(result.issues)} issue(s):")
+        for issue in result.issues:
+            print(f"- {issue}")

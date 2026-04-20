@@ -68,3 +68,9 @@ class IngestResult:
 class QueryResult:
     ok: bool
     answer: str
+
+
+@dataclass
+class LintResult:
+    ok: bool
+    issues: list[str]
