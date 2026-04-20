@@ -15,6 +15,9 @@ class LlmClient(Protocol):
     def compile_article(self, **kwargs: object) -> str:
         raise NotImplementedError
 
+    def answer_query(self, **kwargs: object) -> str:
+        raise NotImplementedError
+
 
 @dataclass
 class OpenAICompatibleClient:
@@ -29,6 +32,9 @@ class OpenAICompatibleClient:
         raise NotImplementedError
 
     def compile_article(self, **kwargs: object) -> str:
+        raise NotImplementedError
+
+    def answer_query(self, **kwargs: object) -> str:
         raise NotImplementedError
 
 

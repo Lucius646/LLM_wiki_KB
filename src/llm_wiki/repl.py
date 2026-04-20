@@ -3,6 +3,7 @@ from pathlib import Path
 from llm_wiki.config import load_config
 from llm_wiki.commands.ingest import ingest_raw_file
 from llm_wiki.commands.init import run_init_command
+from llm_wiki.commands.query import answer_query
 from llm_wiki.llm import build_openai_compatible_client
 from llm_wiki.models import ParsedCommand, WorkspaceStatus
 from llm_wiki.workspace import detect_workspace
@@ -32,6 +33,9 @@ class WikiRepl:
                 continue
             if command.name == "ingest":
                 self._run_ingest(command.args)
+                continue
+            if command.name == "query":
+                self._run_query(command.args)
                 continue
 
     def _print_config_header(self) -> None:
@@ -78,6 +82,25 @@ class WikiRepl:
         print(result.message)
         if result.article_path:
             print(result.article_path)
+
+    def _run_query(self, args: list[str]) -> None:
+        if not args:
+            print("Usage: query <question>")
+            return
+
+        config = load_config()
+        if not config.provider or config.errors:
+            print("Config is not ready for query.")
+            return
+
+        client = build_openai_compatible_client(config.provider)
+        try:
+            result = answer_query(Path.cwd(), args[0], llm=client)
+        except NotImplementedError:
+            print("LLM client implementation is not available yet.")
+            return
+
+        print(result.answer)
 
     def _parse_article_override(self, args: list[str]) -> str | None:
         if len(args) >= 2 and args[0] == "--article":

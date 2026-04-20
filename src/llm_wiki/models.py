@@ -62,3 +62,9 @@ class IngestResult:
     ok: bool
     message: str
     article_path: str = ""
+
+
+@dataclass
+class QueryResult:
+    ok: bool
+    answer: str
