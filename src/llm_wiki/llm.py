@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Protocol
 
+from llm_wiki.config import normalize_base_url
 from llm_wiki.models import ProviderConfig
 
 
@@ -24,6 +25,7 @@ def build_openai_compatible_client(provider: ProviderConfig) -> LlmClient:
         "model": provider.model,
         "api_key": provider.api_key,
     }
-    if provider.base_url:
-        kwargs["base_url"] = provider.base_url
+    base_url = normalize_base_url(provider.base_url)
+    if base_url:
+        kwargs["base_url"] = base_url
     return OpenAICompatibleClient(**kwargs)

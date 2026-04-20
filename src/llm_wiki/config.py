@@ -20,6 +20,8 @@ def load_config() -> ConfigLoadResult:
 
     try:
         raw = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError) as exc:
+        return ConfigLoadResult(provider=None, errors=[f"Config read failed: {exc}"], path=path)
     except json.JSONDecodeError as exc:
         return ConfigLoadResult(provider=None, errors=[f"Invalid config JSON: {exc.msg}"], path=path)
 
@@ -31,19 +33,47 @@ def load_config() -> ConfigLoadResult:
             path=path,
         )
 
-    provider = ProviderConfig(
-        protocol=str(provider_data.get("protocol", "openai_compatible")).strip() or "openai_compatible",
-        model=str(provider_data.get("model", "")).strip(),
-        api_key=str(provider_data.get("api_key", "")).strip(),
-        base_url=normalize_base_url(str(provider_data.get("base_url", ""))),
+    errors: list[str] = []
+    protocol = _read_required_string(provider_data, "protocol", errors)
+    model = _read_required_string(provider_data, "model", errors)
+    api_key = _read_required_string(provider_data, "api_key", errors)
+    base_url = _read_optional_string(provider_data, "base_url", errors)
+
+    if protocol is not None and protocol != "openai_compatible":
+        errors.append("provider.protocol must be openai_compatible")
+
+    if errors:
+        return ConfigLoadResult(provider=None, errors=errors, path=path)
+
+    return ConfigLoadResult(
+        provider=ProviderConfig(
+            protocol=protocol,
+            model=model,
+            api_key=api_key,
+            base_url=normalize_base_url(base_url),
+        ),
+        errors=[],
+        path=path,
     )
 
-    errors: list[str] = []
-    if provider.protocol != "openai_compatible":
-        errors.append("provider.protocol must be openai_compatible")
-    if not provider.model:
-        errors.append("provider.model is required")
-    if not provider.api_key:
-        errors.append("provider.api_key is required")
 
-    return ConfigLoadResult(provider=provider, errors=errors, path=path)
+def _read_required_string(provider_data: dict, field_name: str, errors: list[str]) -> str | None:
+    value = provider_data.get(field_name)
+    if not isinstance(value, str):
+        errors.append(f"provider.{field_name} must be a string")
+        return None
+    normalized = value.strip()
+    if not normalized:
+        errors.append(f"provider.{field_name} is required")
+        return None
+    return normalized
+
+
+def _read_optional_string(provider_data: dict, field_name: str, errors: list[str]) -> str:
+    if field_name not in provider_data:
+        return ""
+    value = provider_data[field_name]
+    if not isinstance(value, str):
+        errors.append(f"provider.{field_name} must be a string")
+        return ""
+    return value
