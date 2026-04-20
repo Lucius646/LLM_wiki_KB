@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "llm-wiki"
+version = "0.1.0"
+description = "REPL scaffolding for the llm wiki project"
+requires-python = ">=3.11"
+dependencies = [
+  "prompt_toolkit",
+  "rich",
+]
+
+[project.scripts]
+llm-wiki = "llm_wiki.app:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+addopts = "-p no:cacheprovider"
