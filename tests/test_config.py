@@ -70,7 +70,7 @@ def test_load_config_rejects_non_string_provider_fields(tmp_path: Path, monkeypa
 
     result = load_config()
 
-    assert result.provider is None
+    assert result.provider is not None
     assert any("protocol" in error.lower() for error in result.errors)
     assert any("model" in error.lower() for error in result.errors)
     assert any("api_key" in error.lower() for error in result.errors)
@@ -129,8 +129,11 @@ def test_load_config_requires_model_and_api_key(tmp_path: Path, monkeypatch):
         '{"provider":{"protocol":"openai_compatible","model":"","api_key":""}}',
         encoding="utf-8",
     )
-    errors = load_config().errors
-    assert "model" in errors[0].lower()
+    result = load_config()
+
+    assert result.provider is not None
+    assert any("model" in error.lower() for error in result.errors)
+    assert any("api_key" in error.lower() for error in result.errors)
 
 
 def test_build_openai_compatible_client_omits_empty_or_whitespace_base_url():

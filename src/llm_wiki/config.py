@@ -34,7 +34,7 @@ def load_config() -> ConfigLoadResult:
         )
 
     errors: list[str] = []
-    protocol = _read_required_string(provider_data, "protocol", errors)
+    protocol = _read_protocol(provider_data, errors)
     model = _read_required_string(provider_data, "model", errors)
     api_key = _read_required_string(provider_data, "api_key", errors)
     base_url = _read_optional_string(provider_data, "base_url", errors)
@@ -42,19 +42,26 @@ def load_config() -> ConfigLoadResult:
     if protocol is not None and protocol != "openai_compatible":
         errors.append("provider.protocol must be openai_compatible")
 
-    if errors:
-        return ConfigLoadResult(provider=None, errors=errors, path=path)
-
-    return ConfigLoadResult(
-        provider=ProviderConfig(
-            protocol=protocol,
-            model=model,
-            api_key=api_key,
-            base_url=normalize_base_url(base_url),
-        ),
-        errors=[],
-        path=path,
+    provider = ProviderConfig(
+        protocol=protocol or "openai_compatible",
+        model=model or "",
+        api_key=api_key or "",
+        base_url=normalize_base_url(base_url),
     )
+
+    return ConfigLoadResult(provider=provider, errors=errors, path=path)
+
+
+def _read_protocol(provider_data: dict, errors: list[str]) -> str:
+    value = provider_data.get("protocol", "openai_compatible")
+    if not isinstance(value, str):
+        errors.append("provider.protocol must be a string")
+        return "openai_compatible"
+    normalized = value.strip()
+    if not normalized:
+        errors.append("provider.protocol must be openai_compatible")
+        return "openai_compatible"
+    return normalized
 
 
 def _read_required_string(provider_data: dict, field_name: str, errors: list[str]) -> str | None:
