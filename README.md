@@ -1,132 +1,132 @@
-# karpathy-llm-wiki
+# LLM Wiki Knock-Brick MVP
 
-**A reusable skill for building Karpathy-style LLM wikis with Claude Code, Cursor, Codex, and other Agent Skills tools.**
+`karpathy-llm-wiki` is a small research prototype for a Karpathy-style LLM wiki workflow. It is not a full knowledge product and it is not a general RAG stack. The goal of `v1` is narrower: make `init -> ingest -> query -> lint` concrete enough to run, explain, and demo.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![GitHub stars](https://img.shields.io/github/stars/Astro-Han/karpathy-llm-wiki?style=social)](https://github.com/Astro-Han/karpathy-llm-wiki)
-[![GitHub forks](https://img.shields.io/github/forks/Astro-Han/karpathy-llm-wiki?style=social)](https://github.com/Astro-Han/karpathy-llm-wiki)
-[![Agent Skills](https://img.shields.io/badge/Agent_Skills-compatible-blue)](https://agentskills.io)
-[![Install](https://img.shields.io/badge/Install-npx_add--skill-green)](https://github.com/Astro-Han/karpathy-llm-wiki#install)
+## What This Repo Is
 
-<p align="center">
-  <img src="assets/karpathy-tweet.png" alt="Karpathy's tweet about LLM Wiki" width="560">
-</p>
+This repo packages the workflow as a thin Python REPL around four operations:
 
-`karpathy-llm-wiki` packages [Karpathy's LLM Wiki idea](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) into one installable [Agent Skills](https://agentskills.io) skill. Your coding agent ingests sources into `raw/`, compiles durable knowledge pages into `wiki/`, answers questions with citations, and lints the wiki for consistency.
+- `init`: initialize a wiki workspace
+- `ingest`: compile one raw markdown source into one concept article
+- `query`: answer from the wiki only
+- `lint`: check structural consistency
 
-## What Is an LLM Wiki?
+The core idea is `knowledge compilation`, not plain retrieval. `raw/` holds source material. `wiki/` holds concept-oriented pages that accumulate knowledge over time.
 
-An **LLM wiki** is a knowledge system where the LLM maintains structured wiki pages instead of re-searching raw documents on every question. New sources are compiled into durable markdown pages, cross-references are updated over time, and answers cite the wiki pages that already contain the synthesized knowledge.
+## Workspace Model
 
-This skill gives you three operations:
+The tool repo and the knowledge workspace are separate.
 
-| Operation | What it does | Output |
-|-----------|--------------|--------|
-| **Ingest** | Collects a source into `raw/` and compiles it into the wiki | New or updated wiki pages |
-| **Query** | Searches the wiki and answers with citations | Grounded answers linking to markdown pages |
-| **Lint** | Checks index integrity, links, and wiki health | Auto-fixes plus reported issues |
+- This repository contains the implementation, prompts, tests, and demo assets.
+- A workspace is any directory that contains `raw/` and `wiki/`.
+- The current working directory is the active workspace.
 
-See [SKILL.md](SKILL.md) for the full skill specification.
-
-## LLM Wiki vs RAG
-
-| Approach | Knowledge lives in | When synthesis happens | Good for |
-|----------|--------------------|------------------------|----------|
-| **RAG** | Raw chunks and embeddings | At query time | Broad retrieval across large corpora |
-| **LLM Wiki** | Curated markdown pages | During ingest and maintenance | Compounding knowledge, summaries, and durable cross-links |
-
-This skill is optimized for the wiki model: knowledge that improves over time instead of re-deriving relationships on every query.
-
-## Usage Stats
-
-Based on a production knowledge base maintained daily since April 2026:
-
-- **94** wiki articles across **13** topic directories
-- **99** source materials ingested
-- **87** operation log entries in the last 7 days
-
-See [examples/](examples/) for sample wiki pages, source files, and operation logs.
-
-## Install
-
-```bash
-npx add-skill Astro-Han/karpathy-llm-wiki
-```
-
-Works with any tool that supports the [Agent Skills](https://agentskills.io) standard.
-
-## Quick Start
-
-### 1. Ingest your first source
-
-Give the skill a URL, a file, or pasted text:
-
-> "Ingest this article: https://example.com/attention-is-all-you-need"
-
-The skill stores the source in `raw/`, then compiles or updates the right knowledge pages in `wiki/`.
-
-### 2. Ask your wiki a question
-
-> "What do I know about attention mechanisms?"
-
-The skill searches the wiki and answers with citations linking back to your markdown pages.
-
-### 3. Keep the wiki healthy
-
-> "Lint my wiki"
-
-Checks for broken links, missing index entries, stale cross-references, and related issues.
-
-## How the Workflow Works
-
-The core idea from Karpathy: the LLM maintains the wiki while the human focuses on choosing sources and asking good questions.
+Minimal workspace layout:
 
 ```text
-your-project/
-├── raw/            ← Immutable source material
-│   └── topic/
-│       └── 2026-04-03-source-article.md
-├── wiki/           ← Compiled knowledge pages maintained by the LLM
-│   ├── topic/
-│   │   └── concept-name.md
-│   ├── index.md    ← Global table of contents
-│   └── log.md      ← Append-only operation log
+my-wiki/
+├─ raw/
+│  └─ <topic>/
+└─ wiki/
+   ├─ <topic>/
+   ├─ index.md
+   └─ log.md
 ```
 
-Each new source can update multiple pages, strengthen cross-references, and record contradictions. That is what makes the wiki compound over time.
+Run `init` inside a workspace to create the missing directories and baseline files.
 
-## Tool Compatibility
+## V1 Boundaries
 
-This skill follows the [agentskills.io](https://agentskills.io) open standard:
+`v1` is intentionally narrow.
 
-| Tool | Install method |
-|------|----------------|
-| Claude Code | `npx add-skill Astro-Han/karpathy-llm-wiki` |
-| Cursor | `npx add-skill Astro-Han/karpathy-llm-wiki` |
-| Codex CLI | Copy to `.agents/skills/karpathy-llm-wiki/` |
-| OpenCode | `npx add-skill Astro-Han/karpathy-llm-wiki` |
-| Other tools | Copy `SKILL.md` and `references/` into the tool's skill directory |
+Included:
 
-## FAQ
+- local workspace initialization
+- local `.md` raw files only
+- single-target concept compilation per ingest
+- read-only query output to the console
+- structural lint for index coverage, wiki links, and raw links
+- tool-level config at `~/.llm-wiki/config.json`
+- OpenAI-compatible provider settings with `model`, `api_key`, and optional `base_url`
 
-### What is the difference between an LLM wiki and a personal wiki?
+Not included:
 
-An LLM wiki is maintained by the model. It updates summaries, cross-links, index entries, and contradictions as new material arrives. A normal personal wiki depends on manual editing.
+- URL ingestion
+- PDF ingestion
+- image understanding
+- multi-article compile and cascade update
+- semantic lint
+- query archiving
+- product-grade chat UI
 
-### What sources can I ingest?
+## Install And Configure
 
-Web pages, papers, blog posts, PDFs, markdown files, text files, and pasted text. The skill converts everything into markdown under `raw/` and compiles it into `wiki/`.
+Create an editable local install:
 
-### Is this production-ready?
+```bash
+python -m pip install -e .
+```
 
-The workflow is based on a real knowledge base with 94 articles and 99 sources maintained daily since April 2026. The repo includes examples, templates, and a design spec.
+Then create `~/.llm-wiki/config.json`:
 
-## Inspired By
+```json
+{
+  "provider": {
+    "protocol": "openai_compatible",
+    "model": "gpt-5.4",
+    "api_key": "sk-...",
+    "base_url": ""
+  }
+}
+```
 
-Unofficial community implementation of the workflow from [Karpathy's LLM Wiki idea](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f). The value here is the reusable workflow, prompt structure, and battle-tested knowledge-compilation rules.
+Leave `base_url` empty to use the provider default endpoint. Set it only when you need an OpenAI-compatible override.
 
-See also: [lucasastorian/llmwiki](https://github.com/lucasastorian/llmwiki), [atomicmemory/llm-wiki-compiler](https://github.com/atomicmemory/llm-wiki-compiler).
+## Demo Flow
 
-## License
+The fixed demo workspace lives under [demo/workspace](demo/workspace/).
 
-[MIT](LICENSE)
+```text
+1. cd demo/workspace
+2. llm-wiki
+3. init
+4. ingest raw/transformers/attention-notes.md
+5. query what does attention do in transformers
+6. lint
+```
+
+What to show during the demo:
+
+- `init` creates `raw/`, `wiki/`, `wiki/index.md`, and `wiki/log.md`
+- `ingest` picks an existing concept page when possible and updates `wiki/index.md` and `wiki/log.md`
+- `query` answers from compiled wiki pages rather than raw files
+- `lint` reports structural issues in the current wiki
+
+## Command Summary
+
+```text
+LLM Wiki REPL
+
+Commands:
+- init
+- status
+- ingest raw/<topic>/<file>.md [--article <slug>]
+- query <question>
+- lint
+- help
+- exit
+```
+
+You can also print help directly:
+
+```bash
+python -m llm_wiki.app --help
+```
+
+## Demo Assets
+
+See [demo/README.md](demo/README.md) for the prepared sample materials and the walkthrough notes for the fixed demo.
+
+## Why This Exists
+
+This repository is meant to be a credible "knock-brick" project: small enough to explain, real enough to run, and structured so `v2` can grow toward stronger knowledge compilation without throwing away the `v1` core.

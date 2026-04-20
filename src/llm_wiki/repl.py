@@ -9,6 +9,18 @@ from llm_wiki.llm import build_openai_compatible_client
 from llm_wiki.models import ParsedCommand, WorkspaceStatus
 from llm_wiki.workspace import detect_workspace
 
+HELP_TEXT = """LLM Wiki REPL
+
+Commands:
+- init
+- status
+- ingest raw/<topic>/<file>.md [--article <slug>]
+- query <question>
+- lint
+- help
+- exit
+"""
+
 
 def parse_command(line: str) -> ParsedCommand:
     head, _, tail = line.strip().partition(" ")
@@ -19,11 +31,14 @@ def parse_command(line: str) -> ParsedCommand:
 
 class WikiRepl:
     def run(self) -> None:
-        self._print_config_header()
+        self._print_header()
         while True:
             command = parse_command(input("> "))
             if command.name in {"exit", "quit"}:
                 return
+            if command.name in {"help", "?"}:
+                print(HELP_TEXT)
+                continue
             if command.name == "init":
                 result = run_init_command()
                 print(f"Initialized workspace: {len(result.created)} file(s) created")
@@ -41,8 +56,15 @@ class WikiRepl:
             if command.name == "lint":
                 self._run_lint()
                 continue
+            if command.name:
+                print(f"Unknown command: {command.name}")
+                print(HELP_TEXT)
 
-    def _print_config_header(self) -> None:
+    def _print_header(self) -> None:
+        status = detect_workspace(Path.cwd())
+        print("LLM Wiki REPL")
+        print(f"Workspace: {Path.cwd()}")
+        print(f"Status: {'initialized' if status.initialized else 'not initialized'}")
         config = load_config()
         if config.provider and not config.errors:
             print(f"Config: ready | model: {config.provider.model}")
@@ -79,8 +101,8 @@ class WikiRepl:
                 article_override=article_override,
                 confirm_new=self._confirm_new_article,
             )
-        except NotImplementedError:
-            print("LLM client implementation is not available yet.")
+        except RuntimeError as exc:
+            print(str(exc))
             return
 
         print(result.message)
@@ -100,8 +122,8 @@ class WikiRepl:
         client = build_openai_compatible_client(config.provider)
         try:
             result = answer_query(Path.cwd(), args[0], llm=client)
-        except NotImplementedError:
-            print("LLM client implementation is not available yet.")
+        except RuntimeError as exc:
+            print(str(exc))
             return
 
         print(result.answer)
