@@ -38,3 +38,20 @@ class ConfigLoadResult:
     provider: ProviderConfig | None
     errors: list[str]
     path: Path
+
+
+@dataclass
+class ArticleDocument:
+    title: str
+    sources_line: str
+    raw_line: str
+    body: str
+
+
+@dataclass
+class IndexEntry:
+    topic: str
+    title: str
+    path: str
+    summary: str
+    updated: str
