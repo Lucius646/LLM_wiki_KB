@@ -55,8 +55,9 @@ def _count_files(directory: Path) -> int:
 def _count_wiki_pages(directory: Path) -> int:
     if not directory.is_dir():
         return 0
+    reserved_root_files = {directory / "index.md", directory / "log.md"}
     return sum(
         1
         for path in directory.rglob("*.md")
-        if path.is_file() and path.name not in {"index.md", "log.md"}
+        if path.is_file() and path not in reserved_root_files
     )

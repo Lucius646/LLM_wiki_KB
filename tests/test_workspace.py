@@ -32,6 +32,20 @@ def test_init_workspace_creates_expected_files(workspace_root: Path):
     assert result.created
 
 
+def test_init_workspace_does_not_overwrite_existing_reserved_files(workspace_root: Path):
+    init_workspace(workspace_root)
+    index_path = workspace_root / "wiki" / "index.md"
+    log_path = workspace_root / "wiki" / "log.md"
+    index_path.write_text("# Existing Index\n", encoding="utf-8")
+    log_path.write_text("# Existing Log\n", encoding="utf-8")
+
+    result = init_workspace(workspace_root)
+
+    assert index_path.read_text(encoding="utf-8") == "# Existing Index\n"
+    assert log_path.read_text(encoding="utf-8") == "# Existing Log\n"
+    assert result.created == []
+
+
 def test_detect_workspace_requires_raw_and_wiki(workspace_root: Path):
     status = detect_workspace(workspace_root)
     assert status.initialized is False
@@ -39,10 +53,14 @@ def test_detect_workspace_requires_raw_and_wiki(workspace_root: Path):
 
 def test_detect_workspace_reports_initialized_counts(workspace_root: Path):
     init_workspace(workspace_root)
+    (workspace_root / "raw" / "topic.md").write_text("raw content\n", encoding="utf-8")
+    nested_article = workspace_root / "wiki" / "topic" / "index.md"
+    nested_article.parent.mkdir(parents=True)
+    nested_article.write_text("# Topic Index\n", encoding="utf-8")
     status = detect_workspace(workspace_root)
     assert status.initialized is True
-    assert status.raw_file_count == 0
-    assert status.wiki_page_count == 0
+    assert status.raw_file_count == 1
+    assert status.wiki_page_count == 1
 
 
 def test_init_command_uses_current_directory(workspace_root: Path, monkeypatch):
