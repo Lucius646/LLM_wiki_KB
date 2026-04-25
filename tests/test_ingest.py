@@ -85,6 +85,11 @@ def test_ingest_updates_multiple_pages_index_log_and_git(tmp_path: Path):
     log_text = (tmp_path / "wiki" / "log.md").read_text(encoding="utf-8")
     assert "Self-attention source updates attention" in log_text
     assert "raw/transformers/attention-notes.md" in log_text
+    assert "- Planned:" in log_text
+    assert "- Updated:" in log_text
+    assert "- Created:" in log_text
+    assert "- Warnings:" in log_text
+    assert "- Commit:" in log_text
     assert "wiki/transformers/attention-mechanism.md" in log_text
     assert "wiki/transformers/self-attention.md" in log_text
 
