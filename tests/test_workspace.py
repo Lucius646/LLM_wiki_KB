@@ -1,16 +1,18 @@
 from pathlib import Path
 import shutil
+import uuid
 
 import pytest
 
 from llm_wiki.commands.init import run_init_command
+from llm_wiki.git import run_git
 from llm_wiki.repl import WikiRepl
 from llm_wiki.workspace import detect_workspace, init_workspace
 
 
 @pytest.fixture
 def workspace_root() -> Path:
-    root = Path(__file__).resolve().parent / "_workspace_tmp"
+    root = Path(__file__).resolve().parent / f"_workspace_tmp_{uuid.uuid4().hex}"
     shutil.rmtree(root, ignore_errors=True)
     root.mkdir()
     try:
@@ -30,6 +32,21 @@ def test_init_workspace_creates_expected_files(workspace_root: Path):
         "# Wiki Log"
     )
     assert result.created
+
+
+def test_init_workspace_initializes_git_repo(workspace_root: Path):
+    result = init_workspace(workspace_root)
+
+    assert (workspace_root / ".git").exists()
+    assert result.git_initialized is True
+
+
+def test_init_workspace_creates_baseline_commit(workspace_root: Path):
+    init_workspace(workspace_root)
+
+    log = run_git(workspace_root, ["log", "--format=%B", "-1"]).stdout
+
+    assert "LLM-Wiki-Action: init" in log
 
 
 def test_init_workspace_does_not_overwrite_existing_reserved_files(workspace_root: Path):

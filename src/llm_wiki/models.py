@@ -11,6 +11,26 @@ class ParsedCommand:
 @dataclass
 class InitResult:
     created: list[str]
+    git_initialized: bool = False
+    baseline_committed: bool = False
+    warnings: list[str] | None = None
+
+
+@dataclass
+class GitStatus:
+    raw_wiki_changes: list[str]
+    other_changes: list[str]
+
+    @property
+    def dirty(self) -> bool:
+        return bool(self.raw_wiki_changes or self.other_changes)
+
+
+@dataclass
+class GitCommitResult:
+    committed: bool
+    commit_hash: str = ""
+    message: str = ""
 
 
 @dataclass

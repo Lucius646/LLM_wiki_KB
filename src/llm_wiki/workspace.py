@@ -1,10 +1,16 @@
 from pathlib import Path
 
+from llm_wiki.git import commit_paths, init_git_repo, is_git_repo
 from llm_wiki.models import InitResult, WorkspaceStatus
 
 
 def init_workspace(root: Path) -> InitResult:
     created: list[str] = []
+    git_initialized = False
+    if not is_git_repo(root):
+        init_git_repo(root)
+        git_initialized = True
+
     raw_dir = root / "raw"
     wiki_dir = root / "wiki"
     index_path = wiki_dir / "index.md"
@@ -19,7 +25,18 @@ def init_workspace(root: Path) -> InitResult:
     if not log_path.exists():
         log_path.write_text("# Wiki Log\n", encoding="utf-8")
         created.append("wiki/log.md")
-    return InitResult(created=created)
+
+    baseline = commit_paths(
+        root,
+        [raw_dir, index_path, log_path],
+        "init: create llm wiki workspace\n\nLLM-Wiki-Action: init",
+    )
+    return InitResult(
+        created=created,
+        git_initialized=git_initialized,
+        baseline_committed=baseline.committed,
+        warnings=[],
+    )
 
 
 def detect_workspace(root: Path) -> WorkspaceStatus:

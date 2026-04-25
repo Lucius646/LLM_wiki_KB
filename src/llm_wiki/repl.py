@@ -40,8 +40,14 @@ class WikiRepl:
                 print(HELP_TEXT)
                 continue
             if command.name == "init":
-                result = run_init_command()
+                try:
+                    result = run_init_command()
+                except RuntimeError as exc:
+                    print(str(exc))
+                    continue
                 print(f"Initialized workspace: {len(result.created)} file(s) created")
+                print(f"Git initialized: {'yes' if result.git_initialized else 'no'}")
+                print(f"Baseline committed: {'yes' if result.baseline_committed else 'no'}")
                 continue
             if command.name == "status":
                 status = detect_workspace(Path.cwd())
