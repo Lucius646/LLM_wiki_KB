@@ -1,6 +1,6 @@
 # Demo Workspace
 
-This directory contains a fixed demo workspace for the `v1` LLM wiki MVP.
+This directory contains a fixed demo workspace for the `v2` LLM wiki workflow.
 
 ## Layout
 
@@ -16,7 +16,7 @@ demo/
          `- mamba-notes.md
 ```
 
-The demo workspace starts with raw markdown only. That is intentional. `wiki/` should be created by `init`, and concept pages should appear only after `ingest`.
+The demo workspace starts with raw markdown only. That is intentional. `wiki/` and the workspace git history should be created by `init`, and concept pages should appear only after `ingest`.
 
 ## Preparation
 
@@ -29,14 +29,17 @@ The demo workspace starts with raw markdown only. That is intentional. `wiki/` s
 
 ```text
 init
-ingest raw/transformers/attention-notes.md
+ingest raw/transformers/self-attention-history.md
 query what does attention do in transformers
 lint
+undo
 exit
 ```
 
 ## Notes
 
-- `v1` only supports local `.md` files under `raw/`
+- `v2` only supports local `.md` files under `raw/`
 - raw files may contain URLs, but the workflow treats them as markdown text sources
-- if the model proposes a brand-new article, the REPL asks for confirmation before writing it
+- `init` initializes git and commits the baseline workspace
+- `ingest` does not ask for confirmation by default; it auto-applies a conservative 1-3 page plan
+- `undo` reverts the latest managed ingest commit using git

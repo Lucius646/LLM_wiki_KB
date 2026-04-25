@@ -15,7 +15,7 @@ HELP_TEXT = """LLM Wiki REPL
 Commands:
 - init
 - status
-- ingest raw/<topic>/<file>.md [--article <slug>]
+- ingest raw/<topic>/<file>.md
 - query <question>
 - lint
 - undo
@@ -93,7 +93,7 @@ class WikiRepl:
 
     def _run_ingest(self, args: list[str]) -> None:
         if not args:
-            print("Usage: ingest raw/<topic>/<file>.md [--article <slug>]")
+            print("Usage: ingest raw/<topic>/<file>.md")
             return
 
         raw_path = Path.cwd() / args[0]

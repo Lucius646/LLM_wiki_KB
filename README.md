@@ -1,15 +1,16 @@
-# LLM Wiki Knock-Brick MVP
+# LLM Wiki V2
 
-`karpathy-llm-wiki` is a small research prototype for a Karpathy-style LLM wiki workflow. It is not a full knowledge product and it is not a general RAG stack. The goal of `v1` is narrower: make `init -> ingest -> query -> lint` concrete enough to run, explain, and demo.
+`karpathy-llm-wiki` is a small research prototype for a Karpathy-style LLM wiki workflow. It is not a full knowledge product and it is not a general RAG stack. V2 makes the workflow git-backed, low-intervention, auditable, and capable of conservative multi-page knowledge compilation.
 
 ## What This Repo Is
 
-This repo packages the workflow as a thin Python REPL around four operations:
+This repo packages the workflow as a thin Python REPL around five operations:
 
-- `init`: initialize a wiki workspace
-- `ingest`: compile one raw markdown source into one concept article
+- `init`: initialize a git-backed wiki workspace
+- `ingest`: compile one raw markdown source into a conservative set of wiki pages
 - `query`: answer from the wiki only
 - `lint`: check structural consistency
+- `undo`: revert the latest managed ingest commit
 
 The core idea is `knowledge compilation`, not plain retrieval. `raw/` holds source material. `wiki/` holds concept-oriented pages that accumulate knowledge over time.
 
@@ -33,19 +34,23 @@ my-wiki/
    └─ log.md
 ```
 
-Run `init` inside a workspace to create the missing directories and baseline files.
+Run `init` inside a workspace to create the missing directories, baseline files, and a git repository if needed.
 
-## V1 Boundaries
+## V2 Boundaries
 
-`v1` is intentionally narrow.
+`v2` is still intentionally narrow.
 
 Included:
 
-- local workspace initialization
+- git-backed local workspace initialization
 - local `.md` raw files only
-- single-target concept compilation per ingest
+- conservative multi-page concept compilation per ingest
+- automatic creation of durable concept pages
+- structured Markdown audit entries in `wiki/log.md`
+- automatic checkpoint and ingest commits with `LLM-Wiki-Action` trailers
+- `undo` for reverting the latest managed ingest commit
 - read-only query output to the console
-- structural lint for index coverage, wiki links, and raw links
+- structural lint for index coverage, wiki links, raw links, article metadata, log references, orphan pages, and duplicate candidates
 - tool-level config at `~/.llm-wiki/config.json`
 - OpenAI-compatible provider settings with `model`, `api_key`, and optional `base_url`
 
@@ -54,10 +59,12 @@ Not included:
 - URL ingestion
 - PDF ingestion
 - image understanding
-- multi-article compile and cascade update
 - semantic lint
 - query archiving
 - product-grade chat UI
+- hidden run database
+
+Git is a required system dependency for V2 workspaces. The tool calls the git CLI directly; it does not depend on GitPython.
 
 ## Install And Configure
 
@@ -90,17 +97,19 @@ The fixed demo workspace lives under [demo/workspace](demo/workspace/).
 1. cd demo/workspace
 2. llm-wiki
 3. init
-4. ingest raw/transformers/attention-notes.md
+4. ingest raw/transformers/self-attention-history.md
 5. query what does attention do in transformers
 6. lint
+7. undo
 ```
 
 What to show during the demo:
 
-- `init` creates `raw/`, `wiki/`, `wiki/index.md`, and `wiki/log.md`
-- `ingest` picks an existing concept page when possible and updates `wiki/index.md` and `wiki/log.md`
+- `init` creates `raw/`, `wiki/`, `wiki/index.md`, `wiki/log.md`, and a baseline git commit
+- `ingest` plans internally, updates or creates 1-3 concept pages, updates `wiki/index.md`, writes `wiki/log.md`, and commits the result
 - `query` answers from compiled wiki pages rather than raw files
 - `lint` reports structural issues in the current wiki
+- `undo` reverts the latest commit with `LLM-Wiki-Action: ingest`
 
 ## Command Summary
 
@@ -110,11 +119,19 @@ LLM Wiki REPL
 Commands:
 - init
 - status
-- ingest raw/<topic>/<file>.md [--article <slug>]
+- ingest raw/<topic>/<file>.md
 - query <question>
 - lint
+- undo
 - help
 - exit
+```
+
+Managed git commits include machine-readable trailers:
+
+```text
+LLM-Wiki-Action: init|checkpoint|ingest|undo
+LLM-Wiki-Source: raw/<topic>/<file>.md
 ```
 
 You can also print help directly:
@@ -129,4 +146,4 @@ See [demo/README.md](demo/README.md) for the prepared sample materials and the w
 
 ## Why This Exists
 
-This repository is meant to be a credible "knock-brick" project: small enough to explain, real enough to run, and structured so `v2` can grow toward stronger knowledge compilation without throwing away the `v1` core.
+This repository is meant to be a credible "knock-brick" project: small enough to explain, real enough to run, and structured so later versions can grow toward stronger knowledge compilation without throwing away the CLI core.
