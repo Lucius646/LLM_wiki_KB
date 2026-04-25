@@ -22,6 +22,15 @@ class LlmClient(Protocol):
     def answer_query(self, **kwargs: object) -> str:
         raise NotImplementedError
 
+    def plan_ingest(self, **kwargs: object) -> dict[str, object]:
+        raise NotImplementedError
+
+    def compile_page_change(self, **kwargs: object) -> str:
+        raise NotImplementedError
+
+    def generate_commit_message(self, **kwargs: object) -> str:
+        raise NotImplementedError
+
 
 @dataclass
 class OpenAICompatibleClient:
@@ -126,6 +135,69 @@ class OpenAICompatibleClient:
                 f"Question: {kwargs.get('question', '')}",
                 "Candidate wiki documents:",
                 "\n\n".join(rendered_documents) if rendered_documents else "(none)",
+            ]
+        )
+        return self.complete(prompt)
+
+    def plan_ingest(self, **kwargs: object) -> dict[str, object]:
+        prompt_template = _load_prompt("plan_ingest.md")
+        candidates = kwargs.get("candidates", [])
+        candidate_lines = []
+        for entry in candidates:
+            if isinstance(entry, IndexEntry):
+                candidate_lines.append(f"- {entry.title} ({entry.path}): {entry.summary}")
+        prompt = "\n\n".join(
+            [
+                prompt_template.strip(),
+                f"Raw path: {kwargs.get('raw_path', '')}",
+                "Existing candidate articles:",
+                "\n".join(candidate_lines) if candidate_lines else "- (none)",
+                "Raw markdown source:",
+                str(kwargs.get("raw_text", "")).strip(),
+            ]
+        )
+        raw_response = self.complete(prompt)
+        try:
+            parsed = json.loads(raw_response)
+        except json.JSONDecodeError as exc:
+            raise RuntimeError(f"LLM returned invalid plan_ingest JSON: {exc.msg}") from exc
+        if not isinstance(parsed, dict):
+            raise RuntimeError("LLM plan_ingest response must be a JSON object.")
+        changes = parsed.get("changes")
+        if not isinstance(changes, list) or not 1 <= len(changes) <= 3:
+            raise RuntimeError("LLM ingest plan must contain 1-3 changes.")
+        return parsed
+
+    def compile_page_change(self, **kwargs: object) -> str:
+        prompt_template = _load_prompt("compile_page_change.md")
+        prompt = "\n\n".join(
+            [
+                prompt_template.strip(),
+                f"Action: {kwargs.get('action', '')}",
+                f"Topic: {kwargs.get('topic', '')}",
+                f"Target article slug: {kwargs.get('slug', '')}",
+                f"Target article title: {kwargs.get('title', '')}",
+                f"Reason: {kwargs.get('reason', '')}",
+                f"Raw path: {kwargs.get('raw_path', '')}",
+                "Existing article content:",
+                str(kwargs.get("existing_article", "")).strip() or "(none)",
+                "Raw markdown source:",
+                str(kwargs.get("raw_text", "")).strip(),
+            ]
+        )
+        return self.complete(prompt)
+
+    def generate_commit_message(self, **kwargs: object) -> str:
+        prompt_template = _load_prompt("commit_message.md")
+        changed_paths = kwargs.get("changed_paths", [])
+        paths = "\n".join(f"- {path}" for path in changed_paths) if isinstance(changed_paths, list) else ""
+        prompt = "\n\n".join(
+            [
+                prompt_template.strip(),
+                f"Source: {kwargs.get('source', '')}",
+                f"Summary: {kwargs.get('summary', '')}",
+                "Changed paths:",
+                paths or "- (none)",
             ]
         )
         return self.complete(prompt)

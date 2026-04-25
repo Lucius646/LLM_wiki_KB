@@ -82,6 +82,23 @@ class IngestResult:
     ok: bool
     message: str
     article_path: str = ""
+    article_paths: list[str] | None = None
+
+
+@dataclass
+class PageChangePlan:
+    action: str
+    topic: str
+    slug: str
+    title: str
+    reason: str
+
+
+@dataclass
+class IngestPlan:
+    summary: str
+    changes: list[PageChangePlan]
+    warnings: list[str]
 
 
 @dataclass
