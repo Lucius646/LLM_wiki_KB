@@ -116,7 +116,7 @@ def ingest_raw_file(
         updated=updated,
         created=created,
         warnings=plan.warnings,
-        commit="pending",
+        commit="see enclosing git commit",
     )
     commit_message = _build_ingest_commit_message(commit_subject, relative.as_posix())
     commit_paths(root, [root / "raw", root / "wiki"], commit_message)

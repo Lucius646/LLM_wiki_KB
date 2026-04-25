@@ -80,6 +80,8 @@ LLM-Wiki-Source: raw/<topic>/<file>.md
 
 The LLM may generate the human-readable subject and summary, but code appends and validates the trailers.
 
+`wiki/log.md` should not attempt to store the final hash of the same commit that contains the log entry. A git commit hash is content-derived, so self-recording it inside the committed file is not stable. The audit entry uses `Commit: see enclosing git commit`; the machine-readable source of truth is the git commit trailer.
+
 ---
 
 ### Task 1: Add Git Workspace Foundation
