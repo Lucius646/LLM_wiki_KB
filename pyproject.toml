@@ -23,4 +23,4 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
-norecursedirs = [".pytest_cache", "temp-pytest", "tests/tmp*"]
+norecursedirs = [".pytest_cache", ".worktrees", "temp-pytest", "tests/tmp*"]
