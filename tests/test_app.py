@@ -61,3 +61,4 @@ def test_help_lists_core_commands():
     assert "ingest" in HELP_TEXT
     assert "query" in HELP_TEXT
     assert "lint" in HELP_TEXT
+    assert "undo" in HELP_TEXT

@@ -5,6 +5,7 @@ from llm_wiki.commands.ingest import ingest_raw_file
 from llm_wiki.commands.init import run_init_command
 from llm_wiki.commands.lint import lint_workspace
 from llm_wiki.commands.query import answer_query
+from llm_wiki.commands.undo import undo_last_ingest
 from llm_wiki.llm import build_openai_compatible_client
 from llm_wiki.models import ParsedCommand, WorkspaceStatus
 from llm_wiki.workspace import detect_workspace
@@ -17,6 +18,7 @@ Commands:
 - ingest raw/<topic>/<file>.md [--article <slug>]
 - query <question>
 - lint
+- undo
 - help
 - exit
 """
@@ -61,6 +63,9 @@ class WikiRepl:
                 continue
             if command.name == "lint":
                 self._run_lint()
+                continue
+            if command.name == "undo":
+                self._run_undo()
                 continue
             if command.name:
                 print(f"Unknown command: {command.name}")
@@ -151,3 +156,7 @@ class WikiRepl:
         print(f"Lint found {len(result.issues)} issue(s):")
         for issue in result.issues:
             print(f"- {issue}")
+
+    def _run_undo(self) -> None:
+        result = undo_last_ingest(Path.cwd())
+        print(result.message)

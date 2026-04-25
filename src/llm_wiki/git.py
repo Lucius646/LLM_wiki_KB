@@ -90,6 +90,43 @@ def commit_paths(root: Path, paths: list[Path], message: str) -> GitCommitResult
     return GitCommitResult(committed=True, commit_hash=commit_hash, message=message)
 
 
+def find_latest_managed_commit(root: Path, action: str) -> str | None:
+    result = run_git(root, ["log", "--format=%H%x00%B%x00END"], check=False)
+    if result.returncode != 0:
+        return None
+    trailer = f"LLM-Wiki-Action: {action}"
+    for block in result.stdout.split("\x00END"):
+        block = block.strip("\n\x00")
+        if not block:
+            continue
+        commit_hash, _, body = block.partition("\x00")
+        if any(line.strip() == trailer for line in body.splitlines()):
+            return commit_hash.strip()
+    return None
+
+
+def revert_commit(root: Path, commit: str, message: str) -> GitCommitResult:
+    run_git(root, ["revert", "--no-commit", commit])
+    staged = run_git(root, ["diff", "--cached", "--quiet"], check=False)
+    if staged.returncode == 0:
+        return GitCommitResult(committed=False, message="No staged revert changes.")
+    run_git(
+        root,
+        [
+            "-c",
+            "user.name=LLM Wiki",
+            "-c",
+            "user.email=llm-wiki@example.invalid",
+            "commit",
+            "--no-gpg-sign",
+            "-m",
+            message,
+        ],
+    )
+    commit_hash = run_git(root, ["rev-parse", "HEAD"]).stdout.strip()
+    return GitCommitResult(committed=True, commit_hash=commit_hash, message=message)
+
+
 def _relative_git_path(root: Path, path: Path) -> str:
     try:
         return path.relative_to(root).as_posix()

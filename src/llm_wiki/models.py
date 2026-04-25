@@ -34,6 +34,13 @@ class GitCommitResult:
 
 
 @dataclass
+class UndoResult:
+    ok: bool
+    message: str
+    commit_hash: str = ""
+
+
+@dataclass
 class WorkspaceStatus:
     root: Path
     raw_exists: bool
