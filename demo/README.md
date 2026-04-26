@@ -1,6 +1,6 @@
 # Demo Workspace
 
-This directory contains a fixed demo workspace for the `v2` LLM wiki workflow.
+This directory contains a fixed demo workspace for the LLM wiki workflow.
 
 ## Layout
 
@@ -16,7 +16,7 @@ demo/
          `- mamba-notes.md
 ```
 
-The demo workspace starts with raw markdown only. That is intentional. `wiki/` and the workspace git history should be created by `init`, and concept pages should appear only after `ingest`.
+The demo workspace starts with raw source material only. That is intentional. `wiki/` and the workspace git history should be created by `init`, and concept pages should appear only after `ingest`.
 
 ## Preparation
 
@@ -36,10 +36,18 @@ undo
 exit
 ```
 
+V3 root raw examples:
+
+```text
+ingest raw/paper.pdf
+ingest raw/screenshot.png
+ingest raw/notes.txt
+```
+
 ## Notes
 
-- `v2` only supports local `.md` files under `raw/`
-- raw files may contain URLs, but the workflow treats them as markdown text sources
+- `raw/` is the user interface; topic folders are optional source identity, not required classification
+- supported first-stage raw formats are `.md`, `.txt`, `.html`, `.json`, `.csv`, `.pdf`, `.png`, `.jpg`, and `.jpeg`
 - `init` initializes git and commits the baseline workspace
 - `ingest` does not ask for confirmation by default; it auto-applies a conservative 1-3 page plan
 - `undo` reverts the latest managed ingest commit using git

@@ -2,6 +2,17 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. This project forbids subagents unless the user explicitly asks for them. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+## Implementation Status
+
+Implemented on `feature/v3-multimodal-raw-ingest`:
+
+- `c35e4fb feat: add openai provider protocol`
+- `4f80448 feat: add raw input abstraction`
+- `8677401 feat: add openai responses llm adapter`
+- `0d6f5ca feat: support format-agnostic raw ingest`
+
+Documentation and final verification are tracked in the current Task 5 commit.
+
 **Goal:** Build v3 around two changes: migrate the primary OpenAI path to the official OpenAI SDK Responses API, and let `raw/` accept more file formats without requiring user-side topic classification or preprocessing.
 
 **Architecture:** Keep the v2 git-backed ingest pipeline, but replace the primary OpenAI transport with a focused adapter using `openai.OpenAI().responses.create`. Introduce a `RawInput` abstraction that represents text, image, and file inputs; `ingest raw/<file>` validates files under `raw/`, builds a `RawInput`, and passes it through the same LLM plan -> page compile -> audit -> commit pipeline. Legacy `openai_compatible` remains a text-only fallback.

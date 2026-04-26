@@ -2,14 +2,14 @@
 
 `LLM_wiki_KB` is a second-development knowledge-base project built from the lightweight `karpathy-llm-wiki` seed. The upstream seed provided the basic Superpowers-style skills, templates, and knock-brick direction; this repository turns that base into a runnable LLM-maintained local Markdown wiki.
 
-The product philosophy is Karpathy-style knowledge compilation, not RAG: humans provide raw materials and direction, while the LLM handles routine organization with minimal human intervention. V2 makes the workflow git-backed, low-intervention, auditable, and capable of conservative multi-page knowledge compilation.
+The product philosophy is Karpathy-style knowledge compilation, not RAG: humans provide raw materials and direction, while the LLM handles routine organization with minimal human intervention. V3 makes `raw/` the user interface: drop source files there, then let the LLM decide the wiki topic/path and compile durable concept pages.
 
 ## What This Repo Is
 
 This repo packages the workflow as a thin Python REPL around five operations:
 
 - `init`: initialize a git-backed wiki workspace
-- `ingest`: compile one raw markdown source into a conservative set of wiki pages
+- `ingest`: compile one raw source into a conservative set of wiki pages
 - `query`: answer from the wiki only
 - `lint`: check structural consistency
 - `undo`: revert the latest managed ingest commit
@@ -28,24 +28,24 @@ Minimal workspace layout:
 
 ```text
 my-wiki/
-├─ raw/
-│  └─ <topic>/
-└─ wiki/
-   ├─ <topic>/
-   ├─ index.md
-   └─ log.md
+|- raw/
+|  `- <dropped source files>
+`- wiki/
+   |- <llm-decided topic>/
+   |- index.md
+   `- log.md
 ```
 
 Run `init` inside a workspace to create the missing directories, baseline files, and a git repository if needed.
 
-## V2 Boundaries
+## V3 Boundaries
 
-`v2` is still intentionally narrow.
+`v3` is still intentionally narrow. The important change is that raw source handling moves closer to the product philosophy: the user drops material into `raw/`; the LLM handles routine interpretation.
 
 Included:
 
 - git-backed local workspace initialization
-- local `.md` raw files only
+- local raw files under `raw/`, including `.md`, `.txt`, `.html`, `.json`, `.csv`, `.pdf`, `.png`, `.jpg`, and `.jpeg`
 - conservative multi-page concept compilation per ingest
 - automatic creation of durable concept pages
 - structured Markdown audit entries in `wiki/log.md`
@@ -54,19 +54,19 @@ Included:
 - read-only query output to the console
 - structural lint for index coverage, wiki links, raw links, article metadata, log references, orphan pages, and duplicate candidates
 - tool-level config at `~/.llm-wiki/config.json`
-- OpenAI-compatible provider settings with `model`, `api_key`, and optional `base_url`
+- official OpenAI SDK provider via `provider.protocol = "openai"`
+- text-only OpenAI-compatible fallback via `provider.protocol = "openai_compatible"`
 
 Not included:
 
 - URL ingestion
-- PDF ingestion
-- image understanding
+- directory/batch ingest
 - semantic lint
 - query archiving
 - product-grade chat UI
 - hidden run database
 
-Git is a required system dependency for V2 workspaces. The tool calls the git CLI directly; it does not depend on GitPython.
+Git is a required system dependency for workspaces. The tool calls the git CLI directly; it does not depend on GitPython. The OpenAI SDK is the primary provider path for v3 multimodal raw ingest.
 
 ## Install And Configure
 
@@ -81,15 +81,25 @@ Then create `~/.llm-wiki/config.json`:
 ```json
 {
   "provider": {
-    "protocol": "openai_compatible",
-    "model": "gpt-5.4",
-    "api_key": "sk-...",
-    "base_url": ""
+    "protocol": "openai",
+    "model": "gpt-5.5",
+    "api_key": "sk-..."
   }
 }
 ```
 
-Leave `base_url` empty to use the provider default endpoint. Set it only when you need an OpenAI-compatible override.
+For OpenAI-compatible text-only endpoints, use:
+
+```json
+{
+  "provider": {
+    "protocol": "openai_compatible",
+    "model": "gpt-5.4",
+    "api_key": "sk-...",
+    "base_url": "https://example.com/v1"
+  }
+}
+```
 
 ## Demo Flow
 
@@ -103,6 +113,14 @@ The fixed demo workspace lives under [demo/workspace](demo/workspace/).
 5. query what does attention do in transformers
 6. lint
 7. undo
+```
+
+V3 also accepts root raw files such as:
+
+```text
+ingest raw/paper.pdf
+ingest raw/screenshot.png
+ingest raw/notes.txt
 ```
 
 What to show during the demo:
@@ -121,7 +139,7 @@ LLM Wiki REPL
 Commands:
 - init
 - status
-- ingest raw/<topic>/<file>.md
+- ingest raw/<file>
 - query <question>
 - lint
 - undo
@@ -133,7 +151,7 @@ Managed git commits include machine-readable trailers:
 
 ```text
 LLM-Wiki-Action: init|checkpoint|ingest|undo
-LLM-Wiki-Source: raw/<topic>/<file>.md
+LLM-Wiki-Source: raw/<file>
 ```
 
 You can also print help directly:
