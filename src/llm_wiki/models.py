@@ -118,3 +118,19 @@ class QueryResult:
 class LintResult:
     ok: bool
     issues: list[str]
+
+
+@dataclass
+class RawInput:
+    ok: bool
+    root: Path
+    path: Path
+    relative_path: str
+    mime_type: str
+    kind: str
+    text: str = ""
+    message: str = ""
+
+    @property
+    def suffix(self) -> str:
+        return self.path.suffix.lower()
