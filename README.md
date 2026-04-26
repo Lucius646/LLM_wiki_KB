@@ -1,6 +1,8 @@
-# LLM Wiki V2
+# LLM Wiki KB
 
-`karpathy-llm-wiki` is a small research prototype for a Karpathy-style LLM wiki workflow. It is not a full knowledge product and it is not a general RAG stack. V2 makes the workflow git-backed, low-intervention, auditable, and capable of conservative multi-page knowledge compilation.
+`LLM_wiki_KB` is a second-development knowledge-base project built from the lightweight `karpathy-llm-wiki` seed. The upstream seed provided the basic Superpowers-style skills, templates, and knock-brick direction; this repository turns that base into a runnable LLM-maintained local Markdown wiki.
+
+The product philosophy is Karpathy-style knowledge compilation, not RAG: humans provide raw materials and direction, while the LLM handles routine organization with minimal human intervention. V2 makes the workflow git-backed, low-intervention, auditable, and capable of conservative multi-page knowledge compilation.
 
 ## What This Repo Is
 
@@ -144,6 +146,14 @@ python -m llm_wiki.app --help
 
 See [demo/README.md](demo/README.md) for the prepared sample materials and the walkthrough notes for the fixed demo.
 
+## Repository
+
+Canonical remote:
+
+```text
+git@github.com:Lucius646/LLM_wiki_KB.git
+```
+
 ## Why This Exists
 
-This repository is meant to be a credible "knock-brick" project: small enough to explain, real enough to run, and structured so later versions can grow toward stronger knowledge compilation without throwing away the CLI core.
+This repository is a personal KB tool experiment: small enough to explain, real enough to run, and structured so later versions can grow toward stronger knowledge compilation without throwing away the CLI core.
