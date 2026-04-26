@@ -158,51 +158,22 @@ class OpenAICompatibleClient:
         return self.complete(prompt)
 
     def plan_ingest(self, **kwargs: object) -> dict[str, object]:
-        prompt_template = _load_prompt("plan_ingest.md")
-        candidates = kwargs.get("candidates", [])
-        candidate_lines = []
-        for entry in candidates:
-            if isinstance(entry, IndexEntry):
-                candidate_lines.append(f"- {entry.title} ({entry.path}): {entry.summary}")
-        prompt = "\n\n".join(
-            [
-                prompt_template.strip(),
-                f"Raw path: {kwargs.get('raw_path', '')}",
-                "Existing candidate articles:",
-                "\n".join(candidate_lines) if candidate_lines else "- (none)",
-                "Raw markdown source:",
-                str(kwargs.get("raw_text", "")).strip(),
-            ]
-        )
-        raw_response = self.complete(prompt)
-        try:
-            parsed = json.loads(raw_response)
-        except json.JSONDecodeError as exc:
-            raise RuntimeError(f"LLM returned invalid plan_ingest JSON: {exc.msg}") from exc
-        if not isinstance(parsed, dict):
-            raise RuntimeError("LLM plan_ingest response must be a JSON object.")
+        raw_input = kwargs.get("raw_input")
+        prompt = _plan_ingest_prompt(**kwargs)
+        if isinstance(raw_input, RawInput):
+            parsed = _parse_json_response(prompt, lambda value: self.complete_with_raw(value, raw_input))
+        else:
+            parsed = _parse_json_response(prompt, self.complete)
         changes = parsed.get("changes")
         if not isinstance(changes, list) or not 1 <= len(changes) <= 3:
             raise RuntimeError("LLM ingest plan must contain 1-3 changes.")
         return parsed
 
     def compile_page_change(self, **kwargs: object) -> str:
-        prompt_template = _load_prompt("compile_page_change.md")
-        prompt = "\n\n".join(
-            [
-                prompt_template.strip(),
-                f"Action: {kwargs.get('action', '')}",
-                f"Topic: {kwargs.get('topic', '')}",
-                f"Target article slug: {kwargs.get('slug', '')}",
-                f"Target article title: {kwargs.get('title', '')}",
-                f"Reason: {kwargs.get('reason', '')}",
-                f"Raw path: {kwargs.get('raw_path', '')}",
-                "Existing article content:",
-                str(kwargs.get("existing_article", "")).strip() or "(none)",
-                "Raw markdown source:",
-                str(kwargs.get("raw_text", "")).strip(),
-            ]
-        )
+        raw_input = kwargs.get("raw_input")
+        prompt = _compile_page_change_prompt(**kwargs)
+        if isinstance(raw_input, RawInput):
+            return self.complete_with_raw(prompt, raw_input)
         return self.complete(prompt)
 
     def generate_commit_message(self, **kwargs: object) -> str:

@@ -58,7 +58,7 @@ def test_help_lists_core_commands():
     from llm_wiki.repl import HELP_TEXT
 
     assert "init" in HELP_TEXT
-    assert "ingest" in HELP_TEXT
+    assert "ingest raw/<file>" in HELP_TEXT
     assert "query" in HELP_TEXT
     assert "lint" in HELP_TEXT
     assert "undo" in HELP_TEXT

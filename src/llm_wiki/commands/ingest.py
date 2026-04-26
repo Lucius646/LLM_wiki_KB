@@ -3,6 +3,7 @@ from pathlib import Path
 
 from llm_wiki.git import commit_paths, get_git_status, is_git_repo
 from llm_wiki.models import IndexEntry, IngestResult, IngestPlan, PageChangePlan
+from llm_wiki.raw_input import build_raw_input
 from llm_wiki.wiki.article import parse_article_document
 from llm_wiki.wiki.index import read_index_entries, upsert_index_entry
 from llm_wiki.wiki.log import append_ingest_audit_entry
@@ -20,10 +21,9 @@ def ingest_raw_file(
     except ValueError:
         return IngestResult(ok=False, message="Raw file must be inside the active workspace.")
 
-    if not relative.parts or relative.parts[0] != "raw" or raw_path.suffix.lower() != ".md":
-        return IngestResult(ok=False, message="Unsupported raw file type: only .md is supported in v1.")
-    if not raw_path.is_file():
-        return IngestResult(ok=False, message=f"Raw file not found: {relative.as_posix()}")
+    raw_input = build_raw_input(root, raw_path)
+    if not raw_input.ok:
+        return IngestResult(ok=False, message=raw_input.message)
 
     if not is_git_repo(root):
         return IngestResult(ok=False, message="Workspace must be initialized with git before ingest.")
@@ -41,13 +41,11 @@ def ingest_raw_file(
             "checkpoint: save raw/wiki changes\n\nLLM-Wiki-Action: checkpoint",
         )
 
-    raw_text = raw_path.read_text(encoding="utf-8")
     index_path = root / "wiki" / "index.md"
     entries = read_index_entries(index_path)
     plan = _parse_ingest_plan(
         llm.plan_ingest(
-            raw_text=raw_text,
-            raw_path=relative.as_posix(),
+            raw_input=raw_input,
             candidates=entries,
         )
     )
@@ -73,8 +71,7 @@ def ingest_raw_file(
             slug=change.slug,
             title=change.title,
             reason=change.reason,
-            raw_text=raw_text,
-            raw_path=relative.as_posix(),
+            raw_input=raw_input,
             existing_article=existing_article,
         )
         if not compiled.strip():
@@ -133,12 +130,6 @@ def load_prompt_template(name: str) -> str:
     return (prompts_dir / name).read_text(encoding="utf-8")
 
 
-def _determine_topic(relative_raw_path: Path) -> str:
-    if len(relative_raw_path.parts) >= 3:
-        return relative_raw_path.parts[1]
-    return "general"
-
-
 def _find_existing_entry(entries: list[IndexEntry], slug: str, title: str) -> IndexEntry | None:
     target_filename = f"{slug}.md"
     for entry in entries:
@@ -148,10 +139,6 @@ def _find_existing_entry(entries: list[IndexEntry], slug: str, title: str) -> In
         if entry.title.strip().lower() == title.strip().lower():
             return entry
     return None
-
-
-def _slug_to_title(slug: str) -> str:
-    return slug.replace("-", " ").strip().title()
 
 
 def _extract_summary(document) -> str:

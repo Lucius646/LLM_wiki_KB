@@ -6,7 +6,7 @@ from llm_wiki.commands.init import run_init_command
 from llm_wiki.commands.lint import lint_workspace
 from llm_wiki.commands.query import answer_query
 from llm_wiki.commands.undo import undo_last_ingest
-from llm_wiki.llm import build_openai_compatible_client
+from llm_wiki.llm import build_llm_client
 from llm_wiki.models import ParsedCommand, WorkspaceStatus
 from llm_wiki.workspace import detect_workspace
 
@@ -15,7 +15,7 @@ HELP_TEXT = """LLM Wiki REPL
 Commands:
 - init
 - status
-- ingest raw/<topic>/<file>.md
+- ingest raw/<file>
 - query <question>
 - lint
 - undo
@@ -93,7 +93,7 @@ class WikiRepl:
 
     def _run_ingest(self, args: list[str]) -> None:
         if not args:
-            print("Usage: ingest raw/<topic>/<file>.md")
+            print("Usage: ingest raw/<file>")
             return
 
         raw_path = Path.cwd() / args[0]
@@ -103,7 +103,7 @@ class WikiRepl:
             print("Config is not ready for ingest.")
             return
 
-        client = build_openai_compatible_client(config.provider)
+        client = build_llm_client(config.provider)
         try:
             result = ingest_raw_file(
                 Path.cwd(),
@@ -130,7 +130,7 @@ class WikiRepl:
             print("Config is not ready for query.")
             return
 
-        client = build_openai_compatible_client(config.provider)
+        client = build_llm_client(config.provider)
         try:
             result = answer_query(Path.cwd(), args[0], llm=client)
         except RuntimeError as exc:

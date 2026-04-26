@@ -8,4 +8,5 @@ Requirements:
 - Include a `> Raw:` markdown link to the raw source.
 - Preserve useful existing content.
 - Add only knowledge supported by the raw source.
+- The raw source may be Markdown, text, HTML, JSON, CSV, PDF, or an image.
 - Keep the article concept-oriented, not note-oriented.

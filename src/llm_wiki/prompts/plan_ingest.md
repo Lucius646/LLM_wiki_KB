@@ -21,4 +21,7 @@ Rules:
 - Prefer updating existing pages.
 - Create a page only for a durable concept.
 - Do not reorganize the wiki broadly.
+- The raw path is source identity and weak context only.
+- Decide wiki topic from the source content, not solely from the raw directory name.
+- The source may be Markdown, text, HTML, JSON, CSV, PDF, or an image.
 - Do not include markdown fences or commentary.
