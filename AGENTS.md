@@ -17,3 +17,6 @@ Default rules:
 - Do not use subagents unless the user explicitly asks for them.
 - Use focused tests before implementation for core behavior.
 - Run verification before claiming completion.
+- Before implementing a requirement, check whether an existing implementation, mature library, official SDK, or nearby reference project already solves the problem. Prefer adopting or simplifying proven implementations over rebuilding them.
+- For OpenAI API work, use the official OpenAI SDK and current official API shape unless there is a specific reason not to.
+- For knowledge-base product patterns, inspect the sibling `MindOS` project when relevant and borrow simplified ideas rather than inventing from scratch.

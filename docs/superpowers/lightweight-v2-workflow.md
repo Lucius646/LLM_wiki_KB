@@ -17,10 +17,23 @@ Because of that, v2 should optimize for short feedback loops and explicit bounda
 ## Keep These Gates
 
 - Discuss a mini spec before writing an implementation plan.
+- Before designing or implementing, check existing solutions: official SDKs, mature libraries, and nearby reference projects such as `MindOS`.
+- Prefer simplifying proven implementations over rebuilding them from scratch.
 - Keep feature work isolated in the `v2-multi-page-ingest` worktree.
 - Use tests before implementation for core behavior.
 - When tests fail, identify the root cause before changing code.
 - Before claiming completion, run verification commands and report exact results.
+
+## Existing-Solution Check
+
+Every new requirement must start with a short existing-solution check:
+
+- Official SDK/API available?
+- Mature library available?
+- Similar implementation in `MindOS` or this repo?
+- If adopting is not appropriate, state the technical reason.
+
+For OpenAI API work, the default is the official OpenAI SDK and current official API surface. Hand-written HTTP should be treated as legacy or fallback, not the primary implementation path.
 
 ## Skip By Default
 
