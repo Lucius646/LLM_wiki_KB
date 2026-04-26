@@ -1,19 +1,21 @@
-# Agent Instructions
+# Project Agent Instructions
 
-This worktree is for v2 development.
+This repository is `LLM_wiki_KB`. These rules apply to project work on every branch and version.
 
-Before doing any v2 planning, specification, implementation, verification, merge, or handoff work, read:
+Before doing planning, specification, implementation, verification, merge, or handoff work, check for relevant local workflow docs under:
 
 ```text
-docs/superpowers/lightweight-v2-workflow.md
+docs/superpowers/
 ```
 
-Treat that file as the local workflow contract for this branch. It intentionally reduces the default Superpowers process, but the reduced process is still mandatory.
+Historical version-specific workflow docs may exist there. Treat them as scoped to that version unless this file says otherwise.
 
 Default rules:
 
 - Discuss and approve a mini spec before writing an implementation plan.
-- Keep work in this `v2-multi-page-ingest` worktree unless explicitly instructed otherwise.
+- Keep feature work isolated in a temporary feature branch or worktree unless explicitly instructed otherwise.
+- Merge completed feature work back to `main`; use tags/releases such as `v2.0.0` or `v3.0.0` to mark product versions.
+- Do not use long-lived version branches as the primary versioning model.
 - Do not use subagents unless the user explicitly asks for them.
 - Use focused tests before implementation for core behavior.
 - Run verification before claiming completion.
