@@ -49,6 +49,40 @@ def test_load_config_returns_valid_provider_and_normalized_base_url(tmp_path: Pa
     assert result.provider.base_url == "https://example.com/v1"
 
 
+def test_load_config_accepts_openai_protocol(tmp_path: Path, monkeypatch):
+    home = tmp_path / "home"
+    monkeypatch.setenv("USERPROFILE", str(home))
+    config_path = home / ".llm-wiki" / "config.json"
+    config_path.parent.mkdir(parents=True)
+    config_path.write_text(
+        '{"provider":{"protocol":"openai","model":"gpt-5.5","api_key":"sk-test"}}',
+        encoding="utf-8",
+    )
+
+    result = load_config()
+
+    assert result.errors == []
+    assert result.provider is not None
+    assert result.provider.protocol == "openai"
+
+
+def test_load_config_defaults_to_openai_protocol(tmp_path: Path, monkeypatch):
+    home = tmp_path / "home"
+    monkeypatch.setenv("USERPROFILE", str(home))
+    config_path = home / ".llm-wiki" / "config.json"
+    config_path.parent.mkdir(parents=True)
+    config_path.write_text(
+        '{"provider":{"model":"gpt-5.5","api_key":"sk-test"}}',
+        encoding="utf-8",
+    )
+
+    result = load_config()
+
+    assert result.errors == []
+    assert result.provider is not None
+    assert result.provider.protocol == "openai"
+
+
 def test_load_config_rejects_non_string_provider_fields(tmp_path: Path, monkeypatch):
     home = tmp_path / "home"
     monkeypatch.setenv("USERPROFILE", str(home))

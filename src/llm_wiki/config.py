@@ -4,6 +4,10 @@ from pathlib import Path
 from llm_wiki.models import ConfigLoadResult, ProviderConfig
 
 
+SUPPORTED_PROTOCOLS = {"openai", "openai_compatible"}
+DEFAULT_PROTOCOL = "openai"
+
+
 def normalize_base_url(url: str) -> str:
     return url.strip().rstrip("/") if url else ""
 
@@ -39,11 +43,11 @@ def load_config() -> ConfigLoadResult:
     api_key = _read_required_string(provider_data, "api_key", errors)
     base_url = _read_optional_string(provider_data, "base_url", errors)
 
-    if protocol is not None and protocol != "openai_compatible":
-        errors.append("provider.protocol must be openai_compatible")
+    if protocol is not None and protocol not in SUPPORTED_PROTOCOLS:
+        errors.append("provider.protocol must be openai or openai_compatible")
 
     provider = ProviderConfig(
-        protocol=protocol or "openai_compatible",
+        protocol=protocol or DEFAULT_PROTOCOL,
         model=model or "",
         api_key=api_key or "",
         base_url=normalize_base_url(base_url),
@@ -53,14 +57,14 @@ def load_config() -> ConfigLoadResult:
 
 
 def _read_protocol(provider_data: dict, errors: list[str]) -> str:
-    value = provider_data.get("protocol", "openai_compatible")
+    value = provider_data.get("protocol", DEFAULT_PROTOCOL)
     if not isinstance(value, str):
         errors.append("provider.protocol must be a string")
-        return "openai_compatible"
+        return DEFAULT_PROTOCOL
     normalized = value.strip()
     if not normalized:
-        errors.append("provider.protocol must be openai_compatible")
-        return "openai_compatible"
+        errors.append("provider.protocol must be openai or openai_compatible")
+        return DEFAULT_PROTOCOL
     return normalized
 
 

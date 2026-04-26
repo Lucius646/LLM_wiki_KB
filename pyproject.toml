@@ -8,6 +8,7 @@ version = "0.1.0"
 description = "REPL scaffolding for the llm wiki project"
 requires-python = ">=3.11"
 dependencies = [
+  "openai",
   "prompt_toolkit",
   "rich",
 ]
