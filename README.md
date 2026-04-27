@@ -2,14 +2,14 @@
 
 `LLM_wiki_KB` is a second-development knowledge-base project built from the lightweight `karpathy-llm-wiki` seed. The upstream seed provided the basic Superpowers-style skills, templates, and knock-brick direction; this repository turns that base into a runnable LLM-maintained local Markdown wiki.
 
-The product philosophy is Karpathy-style knowledge compilation, not RAG: humans provide raw materials and direction, while the LLM handles routine organization with minimal human intervention. V3 makes `raw/` the user interface: drop source files there, then let the LLM decide the wiki topic/path and compile durable concept pages.
+The product philosophy is Karpathy-style knowledge compilation, not RAG: humans provide raw materials and direction, while the LLM handles routine organization with minimal human intervention. V3 makes `raw/` the user interface: drop source files there, then let the LLM decide the wiki topic/path and compile durable concept pages. V3.1 makes bare `ingest` scan `raw/` automatically and skip unchanged sources.
 
 ## What This Repo Is
 
 This repo packages the workflow as a thin Python REPL around five operations:
 
 - `init`: initialize a git-backed wiki workspace
-- `ingest`: compile one raw source into a conservative set of wiki pages
+- `ingest`: compile pending raw sources into a conservative set of wiki pages
 - `query`: answer from the wiki only
 - `lint`: check structural consistency
 - `undo`: revert the latest managed ingest commit
@@ -33,19 +33,22 @@ my-wiki/
 `- wiki/
    |- <llm-decided topic>/
    |- index.md
+   |- ingest-ledger.json
    `- log.md
 ```
 
 Run `init` inside a workspace to create the missing directories, baseline files, and a git repository if needed.
 
-## V3 Boundaries
+## V3.1 Boundaries
 
-`v3` is still intentionally narrow. The important change is that raw source handling moves closer to the product philosophy: the user drops material into `raw/`; the LLM handles routine interpretation.
+`v3.1` is still intentionally narrow. The important change is that raw source handling moves closer to the product philosophy: the user drops material into `raw/`; bare `ingest` detects which supported files are new or changed.
 
 Included:
 
 - git-backed local workspace initialization
 - local raw files under `raw/`, including `.md`, `.txt`, `.html`, `.json`, `.csv`, `.pdf`, `.png`, `.jpg`, and `.jpeg`
+- automatic raw scanning with content-hash skip detection
+- system-maintained `wiki/ingest-ledger.json`
 - conservative multi-page concept compilation per ingest
 - automatic creation of durable concept pages
 - structured Markdown audit entries in `wiki/log.md`
@@ -109,7 +112,7 @@ The fixed demo workspace lives under [demo/workspace](demo/workspace/).
 1. cd demo/workspace
 2. llm-wiki
 3. init
-4. ingest raw/transformers/self-attention-history.md
+4. ingest
 5. query what does attention do in transformers
 6. lint
 7. undo
@@ -118,6 +121,8 @@ The fixed demo workspace lives under [demo/workspace](demo/workspace/).
 V3 also accepts root raw files such as:
 
 ```text
+ingest
+ingest --show-skipped
 ingest raw/paper.pdf
 ingest raw/screenshot.png
 ingest raw/notes.txt
@@ -125,8 +130,9 @@ ingest raw/notes.txt
 
 What to show during the demo:
 
-- `init` creates `raw/`, `wiki/`, `wiki/index.md`, `wiki/log.md`, and a baseline git commit
+- `init` creates `raw/`, `wiki/`, `wiki/index.md`, `wiki/log.md`, `wiki/ingest-ledger.json`, and a baseline git commit
 - `ingest` plans internally, updates or creates 1-3 concept pages, updates `wiki/index.md`, writes `wiki/log.md`, and commits the result
+- `wiki/ingest-ledger.json` records processed raw hashes so unchanged files are skipped
 - `query` answers from compiled wiki pages rather than raw files
 - `lint` reports structural issues in the current wiki
 - `undo` reverts the latest commit with `LLM-Wiki-Action: ingest`
@@ -139,6 +145,8 @@ LLM Wiki REPL
 Commands:
 - init
 - status
+- ingest
+- ingest --show-skipped
 - ingest raw/<file>
 - query <question>
 - lint

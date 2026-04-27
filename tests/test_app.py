@@ -62,3 +62,44 @@ def test_help_lists_core_commands():
     assert "query" in HELP_TEXT
     assert "lint" in HELP_TEXT
     assert "undo" in HELP_TEXT
+
+
+def test_help_lists_bare_ingest_auto_mode():
+    from llm_wiki.repl import HELP_TEXT
+
+    assert "- ingest" in HELP_TEXT
+    assert "ingest raw/<file>" in HELP_TEXT
+    assert "ingest --show-skipped" in HELP_TEXT
+
+
+def test_repl_bare_ingest_runs_auto_ingest(monkeypatch, capsys):
+    from llm_wiki.models import AutoIngestResult, ProviderConfig
+    from llm_wiki.repl import WikiRepl
+
+    called = []
+    monkeypatch.setattr(
+        "llm_wiki.repl.load_config",
+        lambda: type("Config", (), {
+            "provider": ProviderConfig(protocol="openai", model="gpt-5.5", api_key="sk-test"),
+            "errors": [],
+        })(),
+    )
+    monkeypatch.setattr("llm_wiki.repl.build_llm_client", lambda provider: object())
+    monkeypatch.setattr(
+        "llm_wiki.repl.ingest_pending_raw_files",
+        lambda *args, **kwargs: called.append(kwargs) or AutoIngestResult(
+            ok=True,
+            message="auto result",
+            ingested=[],
+            skipped=[],
+            failed=[],
+        ),
+    )
+
+    WikiRepl()._run_ingest([])
+
+    assert len(called) == 1
+    assert called[0]["show_skipped"] is False
+    assert "llm" in called[0]
+    assert "confirm_new" in called[0]
+    assert "auto result" in capsys.readouterr().out

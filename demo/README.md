@@ -29,7 +29,7 @@ The demo workspace starts with raw source material only. That is intentional. `w
 
 ```text
 init
-ingest raw/transformers/self-attention-history.md
+ingest
 query what does attention do in transformers
 lint
 undo
@@ -39,6 +39,8 @@ exit
 V3 root raw examples:
 
 ```text
+ingest
+ingest --show-skipped
 ingest raw/paper.pdf
 ingest raw/screenshot.png
 ingest raw/notes.txt
@@ -49,5 +51,6 @@ ingest raw/notes.txt
 - `raw/` is the user interface; topic folders are optional source identity, not required classification
 - supported first-stage raw formats are `.md`, `.txt`, `.html`, `.json`, `.csv`, `.pdf`, `.png`, `.jpg`, and `.jpeg`
 - `init` initializes git and commits the baseline workspace
-- `ingest` does not ask for confirmation by default; it auto-applies a conservative 1-3 page plan
+- bare `ingest` scans `raw/`, skips unchanged files through `wiki/ingest-ledger.json`, and auto-applies conservative 1-3 page plans
+- `ingest raw/<file>` remains available for single-file manual ingest
 - `undo` reverts the latest managed ingest commit using git

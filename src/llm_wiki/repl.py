@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from llm_wiki.config import load_config
-from llm_wiki.commands.ingest import ingest_raw_file
+from llm_wiki.commands.ingest import ingest_pending_raw_files, ingest_raw_file
 from llm_wiki.commands.init import run_init_command
 from llm_wiki.commands.lint import lint_workspace
 from llm_wiki.commands.query import answer_query
@@ -15,6 +15,8 @@ HELP_TEXT = """LLM Wiki REPL
 Commands:
 - init
 - status
+- ingest
+- ingest --show-skipped
 - ingest raw/<file>
 - query <question>
 - lint
@@ -92,18 +94,30 @@ class WikiRepl:
         print(f"Wiki pages: {status.wiki_page_count}")
 
     def _run_ingest(self, args: list[str]) -> None:
-        if not args:
-            print("Usage: ingest raw/<file>")
-            return
-
-        raw_path = Path.cwd() / args[0]
-        article_override = self._parse_article_override(args[1:])
         config = load_config()
         if not config.provider or config.errors:
             print("Config is not ready for ingest.")
             return
 
         client = build_llm_client(config.provider)
+        show_skipped = "--show-skipped" in args
+        file_args = [arg for arg in args if arg != "--show-skipped"]
+        if not file_args:
+            try:
+                result = ingest_pending_raw_files(
+                    Path.cwd(),
+                    llm=client,
+                    confirm_new=self._confirm_new_article,
+                    show_skipped=show_skipped,
+                )
+            except RuntimeError as exc:
+                print(str(exc))
+                return
+            print(result.message)
+            return
+
+        raw_path = Path.cwd() / file_args[0]
+        article_override = self._parse_article_override(file_args[1:])
         try:
             result = ingest_raw_file(
                 Path.cwd(),
