@@ -34,6 +34,8 @@ Behavior:
 - Skip files already recorded with the same hash.
 - Ingest files that are new or whose hash changed.
 - Print a compact summary of ingested, skipped, and failed files.
+- Continue processing later files after one file fails.
+- By default, show skipped counts only. A verbose/expanded output mode may list skipped file paths.
 
 Single-file ingest remains supported:
 
@@ -67,6 +69,13 @@ Initial shape:
         "wiki/concepts/example.md"
       ]
     }
+  },
+  "failures": {
+    "raw/broken.pdf": {
+      "sha256": "def456",
+      "failed_at": "2026-04-27T10:40:00+08:00",
+      "error": "LLM returned invalid plan_ingest JSON"
+    }
   }
 }
 ```
@@ -79,20 +88,22 @@ Required fields:
 - `last_ingested_at`: ISO timestamp.
 - `commit`: git commit created by the successful ingest.
 - `article_paths`: wiki paths changed by that ingest.
+- `failures`: latest failed attempt per raw path. This is diagnostic state only; it does not mark a file as successfully ingested.
 
 ## Data Flow
 
 For `ingest` with no args:
 
 1. Detect active workspace.
-2. Read `wiki/ingest-ledger.json`; if missing, treat as empty.
+2. Read `wiki/ingest-ledger.json`; `init` should create it with an empty schema.
 3. Discover supported raw files using the existing v3 raw extension set.
 4. Hash each file.
 5. Select files whose raw path is missing from the ledger or whose hash changed.
 6. Process each selected file through the existing single-file ingest flow.
-7. After each successful file ingest, update the ledger and include it in the managed commit.
+7. After each successful file ingest, update the ledger `sources` entry, clear any stale `failures` entry for that path, and include the ledger in the managed commit.
+8. If one file fails, record or update its `failures` entry, report it in the summary, and continue with the next selected file.
 
-The conservative first implementation should process files sequentially. If one file fails, continue or stop can be decided in implementation planning, but the result must report the failure clearly.
+The conservative first implementation should process files sequentially and continue after per-file failures.
 
 ## Git And Undo
 
@@ -100,12 +111,15 @@ Each successfully ingested raw file can remain one managed ingest commit. This k
 
 The ledger update belongs in the same ingest commit as the wiki changes for that raw file. That keeps rollback coherent: reverting an ingest also reverts the ledger entry for that ingest.
 
+Failure-only ledger updates should not create an ingest commit. They are diagnostic local state and may be written to the working tree so the next run can report prior failures clearly. Because failure entries do not live in `sources`, failed files remain eligible for retry on the next `ingest`.
+
 ## Error Handling
 
-- Missing ledger: initialize in memory and write after the first successful auto ingest.
+- Missing ledger: recreate an empty ledger with a clear warning. Normal workspaces should get the file during `init`.
 - Invalid ledger JSON: fail with a clear message and do not ingest.
 - Unsupported raw files: ignore during auto scan, same supported extension list as v3.
 - No pending files: print a no-op message and do not create a commit.
+- Failed raw file: do not update `sources`; record latest failure metadata under `failures`; continue processing later pending files.
 - Dirty workspace rules remain the same as v3 unless implementation planning identifies a necessary narrow adjustment for the ledger file.
 
 ## Testing
@@ -116,12 +130,9 @@ Focused tests should cover:
 - Re-running `ingest` skips unchanged raw files.
 - Modifying raw content causes re-ingest.
 - Single-file ingest updates the ledger.
+- `init` creates `wiki/ingest-ledger.json`.
+- A failed raw file records a `failures` entry but does not create a successful `sources` entry.
+- Auto ingest continues processing after one raw file fails.
 - Invalid ledger JSON blocks ingest with a clear error.
 - Unsupported raw files are ignored by auto ingest.
 - Ledger updates are included in managed git commits.
-
-## Open Questions For Planning
-
-- Whether auto ingest should continue after one file fails or stop immediately.
-- Whether `wiki/ingest-ledger.json` should be created during `init` or lazily on first successful ingest.
-- Whether summary output should list all skipped files or only counts.
