@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from llm_wiki.git import commit_paths, init_git_repo, is_git_repo
+from llm_wiki.ledger import LEDGER_RELATIVE_PATH, empty_ledger, write_ledger
 from llm_wiki.models import InitResult, WorkspaceStatus
 
 
@@ -15,6 +16,7 @@ def init_workspace(root: Path) -> InitResult:
     wiki_dir = root / "wiki"
     index_path = wiki_dir / "index.md"
     log_path = wiki_dir / "log.md"
+    ledger_path = root / LEDGER_RELATIVE_PATH
     for path in (raw_dir, wiki_dir):
         if not path.exists():
             path.mkdir(parents=True)
@@ -25,10 +27,13 @@ def init_workspace(root: Path) -> InitResult:
     if not log_path.exists():
         log_path.write_text("# Wiki Log\n", encoding="utf-8")
         created.append("wiki/log.md")
+    if not ledger_path.exists():
+        write_ledger(ledger_path, empty_ledger())
+        created.append(LEDGER_RELATIVE_PATH)
 
     baseline = commit_paths(
         root,
-        [raw_dir, index_path, log_path],
+        [raw_dir, index_path, log_path, ledger_path],
         "init: create llm wiki workspace\n\nLLM-Wiki-Action: init",
     )
     return InitResult(

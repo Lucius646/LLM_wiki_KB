@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 import shutil
 import uuid
@@ -32,6 +33,19 @@ def test_init_workspace_creates_expected_files(workspace_root: Path):
         "# Wiki Log"
     )
     assert result.created
+
+
+def test_init_workspace_creates_ingest_ledger(workspace_root: Path):
+    result = init_workspace(workspace_root)
+
+    ledger_path = workspace_root / "wiki" / "ingest-ledger.json"
+    assert ledger_path.is_file()
+    assert json.loads(ledger_path.read_text(encoding="utf-8")) == {
+        "version": 1,
+        "sources": {},
+        "failures": {},
+    }
+    assert "wiki/ingest-ledger.json" in result.created
 
 
 def test_init_workspace_initializes_git_repo(workspace_root: Path):
