@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from llm_wiki.commands.ingest import ingest_raw_file
+from llm_wiki.commands.ingest import ingest_pending_raw_files, ingest_raw_file
 from llm_wiki.git import run_git
 from llm_wiki.workspace import init_workspace
 
@@ -91,6 +91,18 @@ class FakeRawLlm:
 
     def generate_commit_message(self, **kwargs: object) -> str:
         return "ingest: compile raw source"
+
+
+class FakePartiallyFailingLlm(FakeRawLlm):
+    def __init__(self, fail_for: set[str]):
+        super().__init__()
+        self.fail_for = fail_for
+
+    def plan_ingest(self, **kwargs: object) -> dict[str, object]:
+        raw_input = kwargs.get("raw_input")
+        if getattr(raw_input, "relative_path", "") in self.fail_for:
+            raise RuntimeError("planned failure")
+        return super().plan_ingest(**kwargs)
 
 
 def test_ingest_updates_multiple_pages_index_log_and_git(tmp_path: Path):
@@ -252,3 +264,47 @@ def test_ingest_rejects_unsupported_raw_type(tmp_path: Path):
 
     assert result.ok is False
     assert "unsupported raw file type" in result.message.lower()
+
+
+def test_auto_ingest_processes_new_raw_files_and_skips_unchanged(tmp_path: Path):
+    init_workspace(tmp_path)
+    raw_path = tmp_path / "raw" / "note.txt"
+    raw_path.write_text("Transformers use attention.", encoding="utf-8")
+    llm = FakeRawLlm()
+
+    first = ingest_pending_raw_files(tmp_path, llm=llm, confirm_new=lambda _: True)
+    second = ingest_pending_raw_files(tmp_path, llm=llm, confirm_new=lambda _: True)
+
+    assert first.ok is True
+    assert first.ingested == ["raw/note.txt"]
+    assert second.ok is True
+    assert second.ingested == []
+    assert second.skipped == ["raw/note.txt"]
+
+
+def test_auto_ingest_reprocesses_changed_raw_file(tmp_path: Path):
+    init_workspace(tmp_path)
+    raw_path = tmp_path / "raw" / "note.txt"
+    raw_path.write_text("first", encoding="utf-8")
+    ingest_pending_raw_files(tmp_path, llm=FakeRawLlm(), confirm_new=lambda _: True)
+
+    raw_path.write_text("second", encoding="utf-8")
+    result = ingest_pending_raw_files(tmp_path, llm=FakeRawLlm(), confirm_new=lambda _: True)
+
+    assert result.ingested == ["raw/note.txt"]
+
+
+def test_auto_ingest_records_failure_and_continues(tmp_path: Path):
+    init_workspace(tmp_path)
+    (tmp_path / "raw" / "bad.txt").write_text("bad", encoding="utf-8")
+    (tmp_path / "raw" / "good.txt").write_text("good", encoding="utf-8")
+    llm = FakePartiallyFailingLlm(fail_for={"raw/bad.txt"})
+
+    result = ingest_pending_raw_files(tmp_path, llm=llm, confirm_new=lambda _: True)
+    ledger = json.loads((tmp_path / "wiki" / "ingest-ledger.json").read_text(encoding="utf-8"))
+
+    assert result.ok is False
+    assert result.ingested == ["raw/good.txt"]
+    assert result.failed == ["raw/bad.txt"]
+    assert "raw/bad.txt" in ledger["failures"]
+    assert "raw/bad.txt" not in ledger["sources"]

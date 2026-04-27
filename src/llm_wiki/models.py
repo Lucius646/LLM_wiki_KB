@@ -93,6 +93,15 @@ class IngestResult:
 
 
 @dataclass
+class AutoIngestResult:
+    ok: bool
+    message: str
+    ingested: list[str]
+    skipped: list[str]
+    failed: list[str]
+
+
+@dataclass
 class PageChangePlan:
     action: str
     topic: str

@@ -99,3 +99,20 @@ def record_success(
         "article_paths": article_paths,
     }
     failures.pop(relative_path, None)
+
+
+def record_failure(
+    ledger: dict[str, object],
+    *,
+    relative_path: str,
+    sha256: str,
+    error: str,
+) -> None:
+    failures = ledger.setdefault("failures", {})
+    if not isinstance(failures, dict):
+        raise RuntimeError("Invalid ingest ledger schema.")
+    failures[relative_path] = {
+        "sha256": sha256,
+        "failed_at": datetime.now(timezone.utc).isoformat(),
+        "error": error,
+    }

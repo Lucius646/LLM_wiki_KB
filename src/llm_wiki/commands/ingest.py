@@ -4,16 +4,72 @@ from pathlib import Path
 from llm_wiki.git import commit_paths, get_git_status, is_git_repo
 from llm_wiki.ledger import (
     LEDGER_RELATIVE_PATH,
+    discover_supported_raw_files,
+    pending_raw_files,
     read_ledger,
+    record_failure,
     record_success,
     sha256_file,
     write_ledger,
 )
-from llm_wiki.models import IndexEntry, IngestResult, IngestPlan, PageChangePlan
+from llm_wiki.models import AutoIngestResult, IndexEntry, IngestResult, IngestPlan, PageChangePlan
 from llm_wiki.raw_input import build_raw_input
 from llm_wiki.wiki.article import parse_article_document
 from llm_wiki.wiki.index import read_index_entries, upsert_index_entry
 from llm_wiki.wiki.log import append_ingest_audit_entry
+
+
+def ingest_pending_raw_files(
+    root: Path,
+    llm: object,
+    confirm_new,
+    show_skipped: bool = False,
+) -> AutoIngestResult:
+    ledger_path = root / LEDGER_RELATIVE_PATH
+    ledger = read_ledger(ledger_path)
+    supported_files = discover_supported_raw_files(root)
+    pending = pending_raw_files(root, ledger)
+    pending_paths = {item.relative_path for item in pending}
+    skipped = [
+        path.relative_to(root).as_posix()
+        for path in supported_files
+        if path.relative_to(root).as_posix() not in pending_paths
+    ]
+    ingested: list[str] = []
+    failed: list[str] = []
+
+    for item in pending:
+        try:
+            result = ingest_raw_file(
+                root,
+                item.path,
+                llm=llm,
+                article_override=None,
+                confirm_new=confirm_new,
+            )
+        except RuntimeError as exc:
+            result = IngestResult(ok=False, message=str(exc))
+        if result.ok:
+            ingested.append(item.relative_path)
+            continue
+
+        ledger = read_ledger(ledger_path)
+        record_failure(
+            ledger,
+            relative_path=item.relative_path,
+            sha256=item.sha256,
+            error=result.message,
+        )
+        write_ledger(ledger_path, ledger)
+        failed.append(item.relative_path)
+
+    return AutoIngestResult(
+        ok=not failed,
+        message=_build_auto_ingest_message(ingested, skipped, failed, show_skipped),
+        ingested=ingested,
+        skipped=skipped,
+        failed=failed,
+    )
 
 
 def ingest_raw_file(
@@ -198,3 +254,24 @@ def _build_ingest_commit_message(subject: str, source: str) -> str:
             f"LLM-Wiki-Source: {source}",
         ]
     )
+
+
+def _build_auto_ingest_message(
+    ingested: list[str],
+    skipped: list[str],
+    failed: list[str],
+    show_skipped: bool,
+) -> str:
+    lines = [
+        f"Auto ingest complete: {len(ingested)} ingested, {len(skipped)} skipped, {len(failed)} failed."
+    ]
+    if ingested:
+        lines.append("Ingested:")
+        lines.extend(f"- {path}" for path in ingested)
+    if failed:
+        lines.append("Failed:")
+        lines.extend(f"- {path}" for path in failed)
+    if show_skipped and skipped:
+        lines.append("Skipped:")
+        lines.extend(f"- {path}" for path in skipped)
+    return "\n".join(lines)
