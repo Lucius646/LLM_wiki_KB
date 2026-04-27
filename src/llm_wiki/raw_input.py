@@ -7,6 +7,7 @@ from llm_wiki.models import RawInput
 TEXT_EXTENSIONS = {".md", ".txt", ".html", ".json", ".csv"}
 FILE_EXTENSIONS = {".pdf"}
 IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg"}
+SUPPORTED_RAW_EXTENSIONS = TEXT_EXTENSIONS | FILE_EXTENSIONS | IMAGE_EXTENSIONS
 MIME_FALLBACKS = {
     ".md": "text/markdown",
     ".txt": "text/plain",
