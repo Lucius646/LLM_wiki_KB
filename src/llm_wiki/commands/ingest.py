@@ -2,6 +2,13 @@ from datetime import date
 from pathlib import Path
 
 from llm_wiki.git import commit_paths, get_git_status, is_git_repo
+from llm_wiki.ledger import (
+    LEDGER_RELATIVE_PATH,
+    read_ledger,
+    record_success,
+    sha256_file,
+    write_ledger,
+)
 from llm_wiki.models import IndexEntry, IngestResult, IngestPlan, PageChangePlan
 from llm_wiki.raw_input import build_raw_input
 from llm_wiki.wiki.article import parse_article_document
@@ -115,6 +122,16 @@ def ingest_raw_file(
         warnings=plan.warnings,
         commit="see enclosing git commit",
     )
+    ledger_path = root / LEDGER_RELATIVE_PATH
+    ledger = read_ledger(ledger_path)
+    record_success(
+        ledger,
+        relative_path=relative.as_posix(),
+        sha256=sha256_file(raw_path),
+        commit="see enclosing git commit",
+        article_paths=article_paths,
+    )
+    write_ledger(ledger_path, ledger)
     commit_message = _build_ingest_commit_message(commit_subject, relative.as_posix())
     commit_paths(root, [root / "raw", root / "wiki"], commit_message)
     return IngestResult(

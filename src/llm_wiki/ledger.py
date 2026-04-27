@@ -1,6 +1,7 @@
 import hashlib
 import json
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 
 from llm_wiki.raw_input import SUPPORTED_RAW_EXTENSIONS
@@ -77,3 +78,24 @@ def pending_raw_files(root: Path, ledger: dict[str, object]) -> list[PendingRawF
         if not isinstance(existing, dict) or existing.get("sha256") != digest:
             pending.append(PendingRawFile(path=path, relative_path=relative, sha256=digest))
     return pending
+
+
+def record_success(
+    ledger: dict[str, object],
+    *,
+    relative_path: str,
+    sha256: str,
+    commit: str,
+    article_paths: list[str],
+) -> None:
+    sources = ledger.setdefault("sources", {})
+    failures = ledger.setdefault("failures", {})
+    if not isinstance(sources, dict) or not isinstance(failures, dict):
+        raise RuntimeError("Invalid ingest ledger schema.")
+    sources[relative_path] = {
+        "sha256": sha256,
+        "last_ingested_at": datetime.now(timezone.utc).isoformat(),
+        "commit": commit,
+        "article_paths": article_paths,
+    }
+    failures.pop(relative_path, None)

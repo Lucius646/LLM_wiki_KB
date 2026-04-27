@@ -1,3 +1,4 @@
+import json
 import shutil
 import uuid
 from pathlib import Path
@@ -191,6 +192,28 @@ def test_ingest_accepts_txt_at_raw_root(tmp_path: Path):
     assert llm.plan_raw_inputs[0].kind == "text"
     assert llm.plan_raw_inputs[0].relative_path == "raw/note.txt"
     assert llm.compile_raw_inputs[0].text == "Transformers use attention."
+
+
+def test_single_file_ingest_updates_ledger_success_entry(tmp_path: Path):
+    init_workspace(tmp_path)
+    raw_path = tmp_path / "raw" / "note.txt"
+    raw_path.write_text("Transformers use attention.", encoding="utf-8")
+
+    result = ingest_raw_file(
+        tmp_path,
+        raw_path,
+        llm=FakeRawLlm(),
+        article_override=None,
+        confirm_new=lambda _: True,
+    )
+
+    ledger = json.loads((tmp_path / "wiki" / "ingest-ledger.json").read_text(encoding="utf-8"))
+    entry = ledger["sources"]["raw/note.txt"]
+    assert result.ok is True
+    assert entry["sha256"]
+    assert entry["commit"] == "see enclosing git commit"
+    assert entry["article_paths"] == ["wiki/concepts/raw-source.md"]
+    assert "raw/note.txt" not in ledger["failures"]
 
 
 def test_ingest_accepts_pdf_at_raw_root(tmp_path: Path):
